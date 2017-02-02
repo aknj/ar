@@ -25,11 +25,11 @@ int main() {
     cap.set(CV_CAP_PROP_FPS, FPS);
 
     int i = 0;
-    Mat frame, denoised, binary, canny, rgb_contours;
+    Mat frame, denoised, thresholdImg, canny;
     namedWindow("input", 1);
-    namedWindow("binary", 1);
-    namedWindow("canny", 1);
-    namedWindow("contours", 1);
+    // namedWindow("thresholded", 1);
+    // namedWindow("canny", 1);
+    namedWindow("contours_prev", 1);
 
     //- reading an image from file
     Mat img;
@@ -56,22 +56,34 @@ int main() {
         cvtColor(frame, frame, CV_BGR2GRAY);
 
         //-- smoothing (de-noising)
-        // bilateralFilter(frame, blurred, 5, 100, 100);
-        adaptiveBilateralFilter(frame, denoised, Size(5, 5), 100);
+        // bilateralFilter(frame, denoised, 5, 100, 100);
+        // adaptiveBilateralFilter(frame, denoised, Size(5, 5), 100);
         // GaussianBlur(blurred, blurred, Size(3, 3), 0, 0);
         // medianBlur(frame, blurred, 5);
 
-        adaptiveThreshold(blurred, blurred, 255, 
-                          CV_ADAPTIVE_THRESH_MEAN_C, 
-                          CV_THRESH_BINARY, 75, 10);
+        adaptiveThreshold(frame, thresholdImg, 255, 
+                          CV_ADAPTIVE_THRESH_GAUSSIAN_C, 
+                          CV_THRESH_BINARY, 75, 1);
         
         // bitwise_not(blurred, blurred);
 
-        Canny(blurred, canny, 5, 20, 3);
+        vector<vector<Point > > allContours;
+        vector<vector<Point > > quadContours;
+        findContours(thresholdImg, allContours, CV_RETR_LIST, 
+                     CV_CHAIN_APPROX_NONE);
 
-        cvtColor(canny, rgb_contours, CV_GRAY2BGR);
+        for(size_t i = 0; i < allContours.size(); i++) {
+            int contourSize = allContours[i].size();
+            if(contourSize > 4) {
+                quadContours.push_back(allContours[i]);
+            }
+        }
 
+        Mat contours_prev = Mat::zeros(frame.size(), CV_8UC3);
 
+        drawContours(contours_prev, quadContours, -1, Scalar(255,0,0));
+
+        //- find candidates
 
 
         if(waitKey(255) == 27)
@@ -79,9 +91,11 @@ int main() {
 
         cap.retrieve(frame);
 
-        
 
-        
+        imshow("input", frame);
+        imshow("contours_prev", contours_prev);
+
+
     }
 
     return 0;
