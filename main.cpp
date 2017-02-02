@@ -25,8 +25,9 @@ int main() {
     cap.set(CV_CAP_PROP_FPS, FPS);
 
     int i = 0;
-    Mat frame, thresholdImg;
+    Mat frame, grayscale, thresholdImg;
     namedWindow("input", 1);
+    namedWindow("threshold", 1);
     namedWindow("contours_prev", 1);
 
     //- reading an image from file
@@ -39,10 +40,10 @@ int main() {
     }
 
     //- trackbars for changing the parameters of adaptiveThreshold
-    int t1 = 75;
+    int t1 = 111;
     createTrackbar("thr_blocksize", "contours_prev", &t1, 121);
 
-    int t2 = 10;
+    int t2 = 6;
     createTrackbar("thr_c", "contours_prev", &t2, 20);
 
     for(;;) {
@@ -58,7 +59,7 @@ int main() {
             continue;
 
         //- manipulate frame
-        cvtColor(frame, frame, CV_BGR2GRAY);
+        cvtColor(frame, grayscale, CV_BGRA2GRAY);
 
         //-- smoothing (de-noising)
         // bilateralFilter(frame, denoised, 5, 100, 100);
@@ -70,14 +71,17 @@ int main() {
         int thr_blocksize = t1 / 2 * 2 + 3;
         int thr_c = t2 - 10;
 
-        adaptiveThreshold(frame, thresholdImg, 255, 
+        adaptiveThreshold(grayscale, thresholdImg, 255, 
                           CV_ADAPTIVE_THRESH_GAUSSIAN_C, 
-                          CV_THRESH_BINARY, thr_blocksize, thr_c);
+                          CV_THRESH_BINARY_INV, thr_blocksize, thr_c);
         
 
         vector<vector<Point> > allContours;
         vector<vector<Point> > contours;
-        findContours(thresholdImg, allContours, CV_RETR_LIST, 
+
+        Mat contoursImg;
+        thresholdImg.copyTo(contoursImg);
+        findContours(contoursImg, allContours, CV_RETR_LIST, 
                      CV_CHAIN_APPROX_NONE);
 
         for(size_t i = 0; i < allContours.size(); i++) {
@@ -93,7 +97,8 @@ int main() {
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
 
         //- find candidates
-
+        vector<Point> approxCurve;
+        vector<vector<Point> > possible_markers;
 
         if(waitKey(255) == 27)
             break;
@@ -102,8 +107,8 @@ int main() {
 
 
         imshow("input", frame);
+        imshow("threshold", thresholdImg);
         imshow("contours_prev", contours_prev);
-
 
     }
 
