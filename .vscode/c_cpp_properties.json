@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "%OPENCV_INCLUDE%",
+                "%MINGW_C_INCLUDE%",
+                "C:/OpenCV/opencv-2.4.13/build/include"
+                ],
+            "browse" : {
+                "limitSymbolsToIncludedHeaders" : true,
+                "databaseFilename" : ""
+            }
+        }
+    ]
+}
