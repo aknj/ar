@@ -53,7 +53,7 @@ int main() {
             continue;
 
         //- manipulate frame
-        cv::cvtColor(frame, frame, CV_BGR2GRAY);
+        cvtColor(frame, frame, CV_BGR2GRAY);
 
         //-- smoothing (de-noising)
         // bilateralFilter(frame, blurred, 5, 100, 100);
@@ -67,14 +67,14 @@ int main() {
         
         // bitwise_not(blurred, blurred);
 
-        cv::Canny(blurred, canny, 5, 20, 3);
+        Canny(blurred, canny, 5, 20, 3);
 
         cvtColor(canny, rgb_contours, CV_GRAY2BGR);
 
 
 
 
-        if(cv::waitKey(255) == 27)
+        if(waitKey(255) == 27)
             break;
 
         cap.retrieve(frame);
