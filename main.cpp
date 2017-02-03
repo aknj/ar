@@ -10,6 +10,8 @@ const int WIDTH = 320 * 1.2;
 const int HEIGHT = 240 * 1.2;
 const int FPS = 5;
 
+const int marker_min_contour_length_allowed = 100;
+
 
 int main() {
     VideoCapture cap(0);
@@ -43,7 +45,7 @@ int main() {
     int t1 = 111;
     createTrackbar("thr_blocksize", "contours_prev", &t1, 121);
 
-    int t2 = 6;
+    int t2 = 16;
     createTrackbar("thr_c", "contours_prev", &t2, 20);
 
     for(;;) {
@@ -115,7 +117,20 @@ int main() {
             if(!isContourConvex(approx_curve))
                 continue;
 
-            //- ~some~ tests are passed. save marker candidate
+            //- ensure that the distance b/w consecutive points is large enough
+            float min_dist = numeric_limits<float>::max();
+
+            for(int i = 0; i < 4; i++) {
+                Point side = approx_curve[i] - approx_curve[(i+1)%4];
+                float squared_side_length = side.dot(side);
+                min_dist = min(min_dist, squared_side_length);
+            }
+
+            //- check that distance is not very small
+            if(min_dist < marker_min_contour_length_allowed)
+                continue;
+
+            //- all? tests are passed. save marker candidate
             vector<Point> m;
 
             for(int i = 0; i < 4; i++) 
@@ -135,8 +150,9 @@ int main() {
                 swap(m[1], m[3]);
 
             possible_markers.push_back(m);
-            printf("x: %d, y: %d \t\t", m[1].x, m[1].y);
+            printf("  x: %d, y: %d \n", m[1].x, m[1].y);
         }
+        
 
         if(waitKey(255) == 27)
             break;
