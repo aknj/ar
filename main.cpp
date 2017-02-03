@@ -97,8 +97,46 @@ int main() {
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
 
         //- find candidates
-        vector<Point> approxCurve;
+        vector<Point> approx_curve;
         vector<vector<Point> > possible_markers;
+
+        //- for each contour, analyze if it is a parallelepiped likely to be the
+        //--marker
+        for(size_t i = 0; i < contours.size(); i++) {
+            //- approximate to a polygon
+            double eps = contours[i].size() * 0.05;
+            approxPolyDP(contours[i], approx_curve, eps, true);
+
+            //- i'm interested only in polygons that contain only 4 points
+            if(approx_curve.size() != 4)
+                continue;
+
+            //- and they have to be convex
+            if(!isContourConvex(approx_curve))
+                continue;
+
+            //- ~some~ tests are passed. save marker candidate
+            vector<Point> m;
+
+            for(int i = 0; i < 4; i++) 
+                m.push_back(Point2f(approx_curve[i].x, approx_curve[i].y));
+
+            //- sort the points in anti-clockwise order
+            //- trace a line between the first and second point
+            //- if the third point is at the right side, then the points are
+            //--anti-clockwise
+            Point v1 = m[1] - m[0];
+            Point v2 = m[2] - m[0];
+
+            double o = (v1.x * v2.y) - (v1.y * v2.x);
+
+            if(o < 0.0)     //- if the 3rd point is in the left side, then sort
+                            //--in anti-clockwise order
+                swap(m[1], m[3]);
+
+            possible_markers.push_back(m);
+            printf("x: %d, y: %d \t\t", m[1].x, m[1].y);
+        }
 
         if(waitKey(255) == 27)
             break;
