@@ -145,14 +145,14 @@ int main() {
 
             double o = (v1.x * v2.y) - (v1.y * v2.x);
 
-            if(o < 0.0)     //- if the 3rd point is in the left side, then sort
-                            //--in anti-clockwise order
-                swap(m[1], m[3]);
+            if(o < 0.0)             //- if the 3rd point is in the left side, 
+                swap(m[1], m[3]);   //--then sort in anti-clockwise order
+
 
             possible_markers.push_back(m);
             printf("  x: %d, y: %d \n", m[1].x, m[1].y);
         }
-        
+
 
         if(waitKey(255) == 27)
             break;
