@@ -30,6 +30,17 @@ float perimeter(vector<cv::Point> &a)
   return sum;
 }
 
+void draw_polygon(Mat mat_name, vector<Point> &poly) {
+    Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255);
+
+    for(size_t i = 0; i < poly.size(); i++) {
+        size_t i2 = (i+1) % poly.size();
+
+        line(mat_name, poly[i], poly[i2], color);
+    }
+}
+
+
 
 int main() {
     VideoCapture cap(0);
@@ -172,11 +183,12 @@ int main() {
             possible_markers.push_back(m);
             // printf("  x: %d, y: %d \n", m[1].x, m[1].y);
 
-            Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255);
-            line(markers_prev, m[0], m[1], color);
-            line(markers_prev, m[1], m[2], color);
-            line(markers_prev, m[2], m[3], color);
-            line(markers_prev, m[3], m[0], color);
+            // Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255);
+            // line(markers_prev, m[0], m[1], color);
+            // line(markers_prev, m[1], m[2], color);
+            // line(markers_prev, m[2], m[3], color);
+            // line(markers_prev, m[3], m[0], color);
+            draw_polygon(markers_prev, m);
         }
 
         //-- remove these elements which corners are too close to each other
