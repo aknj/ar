@@ -30,6 +30,9 @@ float perimeter(vector<cv::Point> &a)
   return sum;
 }
 
+/**
+ * function draws polygons with a random color of line
+ */
 void draw_polygon(Mat mat_name, vector<Point> &poly) {
     Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255);
 
@@ -188,7 +191,7 @@ int main() {
             // line(markers_prev, m[1], m[2], color);
             // line(markers_prev, m[2], m[3], color);
             // line(markers_prev, m[3], m[0], color);
-            draw_polygon(markers_prev, m);
+            // draw_polygon(markers_prev, m);
         }
 
         //-- remove these elements which corners are too close to each other
@@ -242,9 +245,13 @@ int main() {
         //-- return candidates
         detected_markers.clear();
         for(size_t i = 0; i < possible_markers.size(); i++) {
-            if(!removal_mask[i])
+            if(!removal_mask[i]) {
                 detected_markers.push_back(possible_markers[i]);
+                draw_polygon(markers_prev, possible_markers[i]);
+            }
         }
+
+        
     
 
 
