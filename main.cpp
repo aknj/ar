@@ -12,6 +12,24 @@ const int FPS = 5;
 
 const int marker_min_contour_length_allowed = 100;
 
+float perimeter(vector<cv::Point> &a)
+{
+  int dx, dy;
+  float sum=0;
+  
+  for (size_t i=0;i<a.size();i++)
+  {
+    size_t i2=(i+1) % a.size();
+    
+    dx = a[i].x - a[i2].x;
+    dy = a[i].y - a[i2].y;
+    
+    sum += sqrt(dx*dx + dy*dy);
+  }
+  
+  return sum;
+}
+
 
 int main() {
     VideoCapture cap(0);
@@ -197,24 +215,24 @@ int main() {
         vector<bool> removal_mask(possible_markers.size(), false);
 
         for(size_t i = 0; i < too_near_candidates.size(); i++) {
-            // float p1 = perimeter(possible_markers[too_near_candidates[i].first]);
-            // float p2 = perimeter(possible_markers[too_near_candidates[i].second]);
+            float p1 = perimeter(possible_markers[too_near_candidates[i].first]);
+            float p2 = perimeter(possible_markers[too_near_candidates[i].second]);
 
-            // size_t removal_index;
-            // if(p1 > p2)
-            //     removal_index = too_near_candidates[i].second;
-            // else
-            //     removal_index = too_near_candidates[i].first;
+            size_t removal_index;
+            if(p1 > p2)
+                removal_index = too_near_candidates[i].second;
+            else
+                removal_index = too_near_candidates[i].first;
 
-            // removal_mask[removal_index] = true;
+            removal_mask[removal_index] = true;
         }
 
         //-- return candidates
-        // detected_markers.clear();
-        // for(size_t i = 0; i < possible_markers.size(); i++) {
-        //     if(!removal_mask[i])
-        //         detected_markers.push_back(possible_markers[i]);
-        // }
+        detected_markers.clear();
+        for(size_t i = 0; i < possible_markers.size(); i++) {
+            if(!removal_mask[i])
+                detected_markers.push_back(possible_markers[i]);
+        }
     
 
 
