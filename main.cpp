@@ -3,6 +3,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stdio.h>
 
+// #include "TinyLA.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -27,15 +29,16 @@ int main() {
     cap.set(CV_CAP_PROP_FPS, FPS);
 
     int i = 0;
-    Mat frame, grayscale, thresholdImg;
+    Mat frame, grayscale, thresholdImg, markers_prev;
     namedWindow("input", 1);
     namedWindow("threshold", 1);
     namedWindow("contours_prev", 1);
+    namedWindow("markers_prev", 1);
 
     //- reading an image from file
     Mat img;
 
-    img = imread("images/vip.jpg", CV_LOAD_IMAGE_COLOR);
+    img = imread("images/dydelf.jpg", CV_LOAD_IMAGE_COLOR);
     if(!img.data) {
         printf("Could not open or find the image");
         return -1;
@@ -94,16 +97,17 @@ int main() {
         }
 
         Mat contours_prev = Mat::zeros(frame.size(), CV_8UC3);
-        
+        Mat markers_prev = Mat::zeros(frame.size(), CV_8UC3);
 
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
 
-        //- find candidates
+        //- find candidates -------
+        vector<vector<Point> > detected_markers;
         vector<Point> approx_curve;
         vector<vector<Point> > possible_markers;
 
-        //- for each contour, analyze if it is a parallelepiped likely to be the
-        //--marker
+        //-- for each contour, analyze if it is a parallelepiped likely to be 
+        //---the marker
         for(size_t i = 0; i < contours.size(); i++) {
             //- approximate to a polygon
             double eps = contours[i].size() * 0.05;
@@ -150,8 +154,64 @@ int main() {
 
 
             possible_markers.push_back(m);
-            printf("  x: %d, y: %d \n", m[1].x, m[1].y);
+            // printf("  x: %d, y: %d \n", m[1].x, m[1].y);
+
+            Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255);
+            line(markers_prev, m[0], m[1], color);
+            line(markers_prev, m[1], m[2], color);
+            line(markers_prev, m[2], m[3], color);
+            line(markers_prev, m[3], m[0], color);
         }
+
+        //-- remove these elements which corners are too close to each other
+        //--- first detect candidate for removal:
+        vector< pair<int,int> > too_near_candidates;
+        // for(size_t i = 0; i < possible_markers.size(); i++) {
+        //     const vector<Point>& m1 = possible_markers[i];
+
+        //     //- calculate the avg distance of each corner to the nearest corner
+        //     //--of the other marker candidate
+        //     for(size_t j = i+1; j < possible_markers[j].size(); j++) {
+        //         const vector<Point>& m2 = possible_markers[j];
+
+        //         float dist_squared = 0;
+
+        //         for(int c = 0; c < 4; c++) {
+        //             Point v = m1[c] - m2[c];
+        //             dist_squared += v.dot(v);
+        //         }
+
+        //         dist_squared /= 4;
+
+        //         if(dist_squared < 100) {
+        //             too_near_candidates.push_back(pair<int,int>(i,j));
+        //         }
+        //     }
+        // }
+
+        //-- mark for removal the element of the pair with smaller perimeter ???
+        // vector<bool> removal_mask(possible_markers.size(), false);
+
+        // for(size_t i = 0; i < too_near_candidates.size(); i++) {
+        //     float p1 = perimeter(possible_markers[too_near_candidates[i].first]);
+        //     float p2 = perimeter(possible_markers[too_near_candidates[i].second]);
+
+        //     size_t removal_index;
+        //     if(p1 > p2)
+        //         removal_index = too_near_candidates[i].second;
+        //     else
+        //         removal_index = too_near_candidates[i].first;
+
+        //     removal_mask[removal_index] = true;
+        // }
+
+        //-- return candidates
+        // detected_markers.clear();
+        // for(size_t i = 0; i < possible_markers.size(); i++) {
+        //     if(!removal_mask[i])
+        //         detected_markers.push_back(possible_markers[i]);
+        // }
+    
 
 
         if(waitKey(255) == 27)
@@ -163,6 +223,7 @@ int main() {
         imshow("input", frame);
         imshow("threshold", thresholdImg);
         imshow("contours_prev", contours_prev);
+        imshow("markers_prev", markers_prev);
 
     }
 
