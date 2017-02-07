@@ -3,8 +3,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stdio.h>
 
-// #include "TinyLA.hpp"
-
 using namespace std;
 using namespace cv;
 
@@ -166,44 +164,50 @@ int main() {
         //-- remove these elements which corners are too close to each other
         //--- first detect candidate for removal:
         vector< pair<int,int> > too_near_candidates;
-        // for(size_t i = 0; i < possible_markers.size(); i++) {
-        //     const vector<Point>& m1 = possible_markers[i];
+        for(size_t i = 0; i < possible_markers.size(); i++) {
+            // vector<Point> m1; 
+            // for(int c = 0; c < 4; c++)
+            //     m1.push_back(possible_markers[i][c]);
+            const vector<Point>& m1 = possible_markers[i];
 
-        //     //- calculate the avg distance of each corner to the nearest corner
-        //     //--of the other marker candidate
-        //     for(size_t j = i+1; j < possible_markers[j].size(); j++) {
-        //         const vector<Point>& m2 = possible_markers[j];
+            //- calculate the avg distance of each corner to the nearest corner
+            //--of the other marker candidate
+            for(size_t j = i+1; j < possible_markers.size(); j++) {
+                // vector<Point> m2;
+                // for(int c = 0; c < 4; c++)
+                //     m2.push_back(possible_markers[j][c]);
+                const vector<Point>& m2 = possible_markers[j];
 
-        //         float dist_squared = 0;
+                float dist_squared = 0;
 
-        //         for(int c = 0; c < 4; c++) {
-        //             Point v = m1[c] - m2[c];
-        //             dist_squared += v.dot(v);
-        //         }
+                for(int c = 0; c < 4; c++) {
+                    Point v = m1[c] - m2[c];
+                    dist_squared += v.dot(v);
+                }
 
-        //         dist_squared /= 4;
+                dist_squared /= 4;
 
-        //         if(dist_squared < 100) {
-        //             too_near_candidates.push_back(pair<int,int>(i,j));
-        //         }
-        //     }
-        // }
+                if(dist_squared < 100) {
+                    too_near_candidates.push_back(pair<int,int>(i,j));
+                }
+            }
+        }
 
         //-- mark for removal the element of the pair with smaller perimeter ???
-        // vector<bool> removal_mask(possible_markers.size(), false);
+        vector<bool> removal_mask(possible_markers.size(), false);
 
-        // for(size_t i = 0; i < too_near_candidates.size(); i++) {
-        //     float p1 = perimeter(possible_markers[too_near_candidates[i].first]);
-        //     float p2 = perimeter(possible_markers[too_near_candidates[i].second]);
+        for(size_t i = 0; i < too_near_candidates.size(); i++) {
+            // float p1 = perimeter(possible_markers[too_near_candidates[i].first]);
+            // float p2 = perimeter(possible_markers[too_near_candidates[i].second]);
 
-        //     size_t removal_index;
-        //     if(p1 > p2)
-        //         removal_index = too_near_candidates[i].second;
-        //     else
-        //         removal_index = too_near_candidates[i].first;
+            // size_t removal_index;
+            // if(p1 > p2)
+            //     removal_index = too_near_candidates[i].second;
+            // else
+            //     removal_index = too_near_candidates[i].first;
 
-        //     removal_mask[removal_index] = true;
-        // }
+            // removal_mask[removal_index] = true;
+        }
 
         //-- return candidates
         // detected_markers.clear();
