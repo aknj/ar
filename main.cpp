@@ -202,9 +202,9 @@ int main() {
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
 
         //- find candidates -------
-        vector<vector<Point2f> > detected_markers;
+        vector<marker_t> detected_markers;
         vector<Point> approx_curve;
-        vector<vector<Point2f> > possible_markers;
+        vector<marker_t> possible_markers;
 
         //-- for each contour, analyze if it is a parallelepiped likely to be 
         //---the marker
@@ -235,22 +235,22 @@ int main() {
                 continue;
 
             //- all? tests are passed. save marker candidate
-            vector<Point2f> m;
+            marker_t m;
 
             for(int i = 0; i < 4; i++) 
-                m.push_back(Point2f(approx_curve[i].x, approx_curve[i].y));
+                m.points.push_back(Point2f(approx_curve[i].x, approx_curve[i].y));
 
             //- sort the points in anti-clockwise order
             //- trace a line between the first and second point
             //- if the third point is at the right side, then the points are
             //--anti-clockwise
-            Point v1 = m[1] - m[0];
-            Point v2 = m[2] - m[0];
+            Point v1 = m.points[1] - m.points[0];
+            Point v2 = m.points[2] - m.points[0];
 
             double o = (v1.x * v2.y) - (v1.y * v2.x);
 
             if(o < 0.0)             //- if the 3rd point is in the left side, 
-                swap(m[1], m[3]);   //--then sort in anti-clockwise order
+                swap(m.points[1], m.points[3]);   //--then sort in anti-clockwise order
 
 
             possible_markers.push_back(m);
@@ -262,17 +262,17 @@ int main() {
         //--- first detect candidate for removal:
         vector< pair<int,int> > too_near_candidates;
         for(size_t i = 0; i < possible_markers.size(); i++) {
-            const vector<Point2f>& m1 = possible_markers[i];
+            const marker_t& m1 = possible_markers[i];
 
             //- calculate the avg distance of each corner to the nearest corner
             //--of the other marker candidate
             for(size_t j = i+1; j < possible_markers.size(); j++) {
-                const vector<Point2f>& m2 = possible_markers[j];
+                const marker_t& m2 = possible_markers[j];
 
                 float dist_squared = 0;
 
                 for(int c = 0; c < 4; c++) {
-                    Point v = m1[c] - m2[c];
+                    Point v = m1.points[c] - m2.points[c];
                     dist_squared += v.dot(v);
                 }
 
@@ -288,8 +288,10 @@ int main() {
         vector<bool> removal_mask(possible_markers.size(), false);
 
         for(size_t i = 0; i < too_near_candidates.size(); i++) {
-            float p1 = perimeter(possible_markers[too_near_candidates[i].first]);
-            float p2 = perimeter(possible_markers[too_near_candidates[i].second]);
+            float p1 = perimeter(
+                possible_markers[ too_near_candidates[i].first  ].points);
+            float p2 = perimeter(
+                possible_markers[ too_near_candidates[i].second ].points);
 
             size_t removal_index;
             if(p1 > p2)
@@ -305,20 +307,20 @@ int main() {
         for(size_t i = 0; i < possible_markers.size(); i++) {
             if(!removal_mask[i]) {
                 detected_markers.push_back(possible_markers[i]);
-                draw_polygon(markers_prev, possible_markers[i]);
+                draw_polygon(markers_prev, possible_markers[i].points);
             }
         }
 
         ////////////////////////////////////////////////////////////////////////
         //-- verify/recognize markers
         {
-            vector<vector<Point> > good_markers;
+            vector<marker_t> good_markers;
             Mat canonical_marker_image;
             
             //- identify the markers
             for(size_t i=0; i < detected_markers.size(); i++) {
                 marker_t marker;
-                marker.points = detected_markers[i];
+                marker = detected_markers[i];
 
                 //- find the perspective transformation that brings current
                 //--marker to rectangular form
