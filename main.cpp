@@ -317,7 +317,8 @@ int main() {
             
             //- identify the markers
             for(size_t i=0; i < detected_markers.size(); i++) {
-                Marker marker = detected_markers[i];
+                marker_t marker;
+                marker.points = detected_markers[i];
 
                 //- find the perspective transformation that brings current
                 //--marker to rectangular form
@@ -326,7 +327,7 @@ int main() {
                 // printf("%d", m_marker_corners2d.size());
 
                 Mat marker_transform = getPerspectiveTransform(
-                                            marker, m_marker_corners2d
+                                            marker.points, m_marker_corners2d
                 );
 
                 //- transform image to get a canonical marker image
@@ -335,8 +336,8 @@ int main() {
 
 //# debug
                 {
-                    draw_polygon(marker_image, marker, Scalar(255, 0, 0));
-                    Mat marker_sub_image = marker_image(boundingRect(marker));
+                    draw_polygon(marker_image, marker.points, Scalar(255, 0, 0));
+                    Mat marker_sub_image = marker_image(boundingRect(marker.points));
 
                     namedWindow("markers", 1);
                 }
