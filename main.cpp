@@ -11,20 +11,23 @@ const int HEIGHT = 240 * 1.2;
 const int FPS = 5;
 
 const int marker_min_contour_length_allowed = 100;
+const Size marker_size = Size(100,100);
+vector<Point2f> m_marker_corners2d;
 
-float perimeter(vector<cv::Point> &a)
-{
-  int dx, dy;
-  float sum=0;
-  
-  for (size_t i=0;i<a.size();i++)
-  {
-    size_t i2=(i+1) % a.size();
+
+typedef vector<Point2f> Marker;
+
+float perimeter(vector<Point2f> &a) {
+    float dx, dy;
+    float sum=0;
     
-    dx = a[i].x - a[i2].x;
-    dy = a[i].y - a[i2].y;
+    for(size_t i=0; i < a.size(); i++) {
+        size_t i2=(i+1) % a.size();
     
-    sum += sqrt(dx*dx + dy*dy);
+        dx = a[i].x - a[i2].x;
+        dy = a[i].y - a[i2].y;
+    
+        sum += sqrt(dx*dx + dy*dy);
   }
   
   return sum;
@@ -33,16 +36,15 @@ float perimeter(vector<cv::Point> &a)
 /**
  * function draws polygons with a random color of line
  */
-void draw_polygon(Mat mat_name, vector<Point> &poly) {
-    Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255);
-
+void draw_polygon(Mat mat_name, vector<Point2f> &poly, 
+                  Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255)) 
+{
     for(size_t i = 0; i < poly.size(); i++) {
         size_t i2 = (i+1) % poly.size();
 
         line(mat_name, poly[i], poly[i2], color);
     }
 }
-
 
 
 int main() {
@@ -81,6 +83,12 @@ int main() {
     int t2 = 16;
     createTrackbar("thr_c", "contours_prev", &t2, 20);
 
+
+    m_marker_corners2d.push_back(Point2f(0,0));
+    m_marker_corners2d.push_back(Point2f(marker_size.width-1,0));
+    m_marker_corners2d.push_back(Point2f(marker_size.width-1,marker_size.height-1));
+    m_marker_corners2d.push_back(Point2f(0,marker_size.height-1));
+
     for(;;) {
         if(!cap.grab())
             continue;
@@ -95,6 +103,7 @@ int main() {
 
         //- manipulate frame
         cvtColor(frame, grayscale, CV_BGRA2GRAY);
+        Mat marker_image = grayscale.clone();
 
         //-- smoothing (de-noising)
         // bilateralFilter(frame, denoised, 5, 100, 100);
@@ -132,9 +141,9 @@ int main() {
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
 
         //- find candidates -------
-        vector<vector<Point> > detected_markers;
+        vector<vector<Point2f> > detected_markers;
         vector<Point> approx_curve;
-        vector<vector<Point> > possible_markers;
+        vector<vector<Point2f> > possible_markers;
 
         //-- for each contour, analyze if it is a parallelepiped likely to be 
         //---the marker
@@ -165,7 +174,7 @@ int main() {
                 continue;
 
             //- all? tests are passed. save marker candidate
-            vector<Point> m;
+            vector<Point2f> m;
 
             for(int i = 0; i < 4; i++) 
                 m.push_back(Point2f(approx_curve[i].x, approx_curve[i].y));
@@ -184,13 +193,7 @@ int main() {
 
 
             possible_markers.push_back(m);
-            // printf("  x: %d, y: %d \n", m[1].x, m[1].y);
 
-            // Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255);
-            // line(markers_prev, m[0], m[1], color);
-            // line(markers_prev, m[1], m[2], color);
-            // line(markers_prev, m[2], m[3], color);
-            // line(markers_prev, m[3], m[0], color);
             // draw_polygon(markers_prev, m);
         }
 
@@ -198,18 +201,12 @@ int main() {
         //--- first detect candidate for removal:
         vector< pair<int,int> > too_near_candidates;
         for(size_t i = 0; i < possible_markers.size(); i++) {
-            // vector<Point> m1; 
-            // for(int c = 0; c < 4; c++)
-            //     m1.push_back(possible_markers[i][c]);
-            const vector<Point>& m1 = possible_markers[i];
+            const vector<Point2f>& m1 = possible_markers[i];
 
             //- calculate the avg distance of each corner to the nearest corner
             //--of the other marker candidate
             for(size_t j = i+1; j < possible_markers.size(); j++) {
-                // vector<Point> m2;
-                // for(int c = 0; c < 4; c++)
-                //     m2.push_back(possible_markers[j][c]);
-                const vector<Point>& m2 = possible_markers[j];
+                const vector<Point2f>& m2 = possible_markers[j];
 
                 float dist_squared = 0;
 
@@ -251,9 +248,45 @@ int main() {
             }
         }
 
-        
-    
+        ////////////////////////////////////////////////////////////////////////
+        //-- verify/recognize markers
+        {
+            vector<vector<Point> > good_markers;
+            Mat canonical_marker_image;
+            
+            //- identify the markers
+            for(size_t i=0; i < detected_markers.size(); i++) {
+                Marker marker = detected_markers[i];
 
+                //- find the perspective transformation that brings current
+                //--marker to rectangular form
+                
+
+                // printf("%d", m_marker_corners2d.size());
+
+                Mat marker_transform = getPerspectiveTransform(
+                                            marker, m_marker_corners2d
+                );
+
+                //- transform image to get a canonical marker image
+                warpPerspective(grayscale, canonical_marker_image, 
+                                marker_transform, marker_size);
+
+//# debug
+                {
+                    
+                    draw_polygon(marker_image, marker, Scalar(255, 0, 0));
+                    Mat marker_sub_image = marker_image(boundingRect(marker));
+
+                    namedWindow("markers", 1);
+                }
+//# enddebug
+            }
+
+
+        }
+    
+        imshow("markers", marker_image);
 
         if(waitKey(255) == 27)
             break;
