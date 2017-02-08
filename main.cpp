@@ -50,62 +50,67 @@ void draw_polygon(Mat mat_name, vector<Point2f> &poly,
     }
 }
 
-// int get_marker_id(Mat &marker_image, int &n_rotations) {
-//     assert(marker_image.rows == marker_image.cols);
-//     assert(marker_image.type() == CV_8UC1);
+void get_marker_id(Mat &marker_image, int &n_rotations) {
+    assert(marker_image.rows == marker_image.cols);
+    assert(marker_image.type() == CV_8UC1);
 
-//     Mat grey = marker_image;
+    Mat grey = marker_image;
 
-//     //- threshold image
-//     threshold(grey, grey, 125, 255, THRESH_BINARY | THRESH_OTSU);
-//     namedWindow("binary marker", 1);
-//     imshow("binary marker", grey);
+    //- threshold image
+    threshold(grey, grey, 125, 255, THRESH_BINARY | THRESH_OTSU);
+    namedWindow("binary marker", 1);
+    imshow("binary marker", grey);
 
-//     //- markers are divided in 8x8, of which the inner 6x6 belongs to marker
-//     //--info. the external border should be entirely black
+    //- markers are divided in 8x8, of which the inner 6x6 belongs to marker
+    //--info. the external border should be entirely black
 
-//     int cell_size = marker_image.rows / 8;
+    int cell_size = marker_image.rows / 8;
 
-//     for(int y=0; y < 8; y++) {
-//         int inc = 7;
+    for(int y=0; y < 8; y++) {
+        int inc = 7;
 
-//         if(y==0 || y==7) inc = 1; // for 1st and last row, check whole border
+        if(y==0 || y==7) inc = 1; // for 1st and last row, check whole border
 
-//         for(int x=0; x < 8; x+=inc) {
-//             int cellX = x * cell_size;
-//             int cellY = y * cell_size;
-//             Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
+        for(int x=0; x < 8; x+=inc) {
+            int cellX = x * cell_size;
+            int cellY = y * cell_size;
+            Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
 
-//             int n_z = countNonZero(cell);
+            int n_z = countNonZero(cell);
 
-//             if(n_z > (cell_size * cell_size) / 2) {
-//                 return -1; // cannot be a marker bc the border elem is not black
-//             } 
-//         }
-//     }
+            // if(n_z > (cell_size * cell_size) / 2) {
+            //     return -1; // cannot be a marker bc the border elem is not black
+            // } 
+        }
+    }
 
-//     Mat bit_matrix = Mat::zeros(6, 6, CV_8UC1);
+    Mat bit_matrix = Mat::zeros(6, 6, CV_8UC1);
 
-//     //- get info (for each inner square, determiine if it is black or white)
-//     for(int y=0; y < 6; y++) {
-//         for(int x=0; x < 6; x++) {
-//             int cellX = (x+1) * cell_size;
-//             int cellY = (y+1) * cell_size;
-//             Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
+    //- get info (for each inner square, determiine if it is black or white)
+    for(int y=0; y < 6; y++) {
+        for(int x=0; x < 6; x++) {
+            int cellX = (x+1) * cell_size;
+            int cellY = (y+1) * cell_size;
+            Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
 
-//             int n_z = countNonZero(cell);
-//             if(n_z > (cell_size * cell_size) / 2)
-//                 bit_matrix.at<uchar>(y, x) = 1;
-//         }
-//     }
+            int n_z = countNonZero(cell);
+            if(n_z > (cell_size * cell_size) / 2)
+                bit_matrix.at<uchar>(y, x) = 1;
+        }
+    }
 
-//     //- check all possible rotations
-//     Mat rotations[4];
-//     int distances[4];
+    // //- check all possible rotations
+    // Mat rotations[4];
+    // int distances[4];
 
-//     rotations[0] = bit_matrix;
+    // rotations[0] = bit_matrix;
+    // distances[0] = marker_hamm_dist(rotations[0]);
 
-// }
+    // pair<int,int> min_dist(distances[0],0);
+
+    // for(int i=1; i < 4; i++)
+
+}
 
 
 int main() {
@@ -344,13 +349,16 @@ int main() {
                     namedWindow("markers", 1);
                 }
 //# enddebug
-            }
 
-            // int n_rotations;
-            // int id = get_marker_id(canonical_marker_image, n_rotations);
-            // if(id != -1) {
-                
-            // }
+                // int n_rotations;
+                // int id = get_marker_id(canonical_marker_image, n_rotations);
+                // if(id != -1) {
+                    
+                // }
+
+                int n_rotations;
+                get_marker_id(canonical_marker_image, n_rotations);
+            }
         }
     
         
