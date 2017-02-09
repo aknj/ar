@@ -21,6 +21,8 @@ typedef struct {
     int id;
 } marker_t;
 
+
+
 float perimeter(vector<Point2f> &a) {
     float dx, dy;
     float sum=0;
@@ -50,7 +52,29 @@ void draw_polygon(Mat mat_name, vector<Point2f> &poly,
     }
 }
 
-void get_marker_id(Mat &marker_image, int &n_rotations) {
+Mat bit_matrix_rotate(Mat in) {
+    Mat out;
+    in.copyTo(out);
+    for(int i = 0; i < in.rows; i++) {
+        for(int j = 0; j < in.cols; j++) {
+            out.at<uchar>(i, j) = in.at<uchar>(j, in.rows-1-i);
+        }
+    }
+    return out;
+}
+
+int marker_hamm_dist(Mat bits) {
+    //- parity check matrix
+    int H_data[3][6] = {
+        {1, 0, 1, 0, 1, 0},
+        {0, 1, 1, 0, 0, 1},
+        {0, 0, 0, 1, 1, 1}
+    };
+    Mat H = Mat(3, 6, CV_8UC1, &H_data);
+    return 0;
+}
+
+int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
     assert(marker_image.rows == marker_image.cols);
     assert(marker_image.type() == CV_8UC1);
 
@@ -59,7 +83,7 @@ void get_marker_id(Mat &marker_image, int &n_rotations) {
     //- threshold image
     threshold(grey, grey, 125, 255, THRESH_BINARY | THRESH_OTSU);
     namedWindow("binary marker", 1);
-    imshow("binary marker", grey);
+    // imshow("binary marker", grey);
 
     //- markers are divided in 8x8, of which the inner 6x6 belongs to marker
     //--info. the external border should be entirely black
@@ -78,9 +102,10 @@ void get_marker_id(Mat &marker_image, int &n_rotations) {
 
             int n_z = countNonZero(cell);
 
-            // if(n_z > (cell_size * cell_size) / 2) {
-            //     return -1; // cannot be a marker bc the border elem is not black
-            // } 
+            if(n_z > (cell_size * cell_size) / 2) {
+                // return;
+                return -1; // cannot be a marker bc the border elem is not black
+            } 
         }
     }
 
@@ -99,17 +124,44 @@ void get_marker_id(Mat &marker_image, int &n_rotations) {
         }
     }
 
-    // //- check all possible rotations
-    // Mat rotations[4];
-    // int distances[4];
+    if(it%300 == 0) {
+        for(int x = 0; x < 6; x++) {
+            for(int y = 0; y < 6; y++) {
+                printf(" %i", bit_matrix.at<uchar>(x, y));
+            } 
+            printf("\n");
+        }
+        printf("\n");
+        imshow("binary marker", grey);
+    }
 
-    // rotations[0] = bit_matrix;
-    // distances[0] = marker_hamm_dist(rotations[0]);
+    //- check all possible rotations
+    Mat bit_matrix_rotations[4];
+    int distances[4];
 
-    // pair<int,int> min_dist(distances[0],0);
+    bit_matrix_rotations[0] = bit_matrix;
+    distances[0] = marker_hamm_dist(bit_matrix_rotations[0]);
 
-    // for(int i=1; i < 4; i++)
+    pair<int,int> min_dist(distances[0],0);
 
+    for(int i=1; i < 4; i++) {
+        //- get hamming distance
+        bit_matrix_rotations[i] = bit_matrix_rotate(bit_matrix_rotations[i-1]);
+        distances[i] = marker_hamm_dist(bit_matrix_rotations[i]);
+
+        if(distances[i] < min_dist.first) {
+            min_dist.first = distances[i];
+            min_dist.second = i;
+        }
+    }
+
+    n_rotations = min_dist.second;
+    if(min_dist.first == 0) {
+        //return matrix_to_id(bit_matrix_rotations[min_dist.first]);
+        return 1;
+    }
+
+    return -1;
 }
 
 
@@ -126,7 +178,7 @@ int main() {
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
     cap.set(CV_CAP_PROP_FPS, FPS);
 
-    int i = 0;
+    int it = 0;
     Mat frame, grayscale, thresholdImg, markers_prev;
     namedWindow("input", 1);
     namedWindow("threshold", 1);
@@ -136,7 +188,7 @@ int main() {
     //- reading an image from file
     Mat img;
 
-    img = imread("images/dydelf.jpg", CV_LOAD_IMAGE_COLOR);
+    img = imread("images/zn1.png", CV_LOAD_IMAGE_COLOR);
     if(!img.data) {
         printf("Could not open or find the image");
         return -1;
@@ -160,8 +212,8 @@ int main() {
             continue;
 
         //- dismiss some frames
-        i++;
-        if(i % 30 != 0)
+        it++;
+        if(it % 30 != 0)
             continue;
 
         if(!cap.retrieve(frame) || frame.empty())
@@ -351,17 +403,28 @@ int main() {
 //# enddebug
 
                 // int n_rotations;
-                // int id = get_marker_id(canonical_marker_image, n_rotations);
-                // if(id != -1) {
-                    
-                // }
-
+                // read_marker_id(canonical_marker_image, n_rotations, it);
                 int n_rotations;
-                get_marker_id(canonical_marker_image, n_rotations);
+                int id = read_marker_id(canonical_marker_image, n_rotations, it);
+                if(id != -1) {
+                    marker.id = id;
+                    //- sort the points of the marker according to its data
+                    std::rotate(marker.points.begin(),
+                                marker.points.begin() + 4 - n_rotations,
+                                marker.points.end() );
+
+                    good_markers.push_back(marker);
+                }
             }
+
+            detected_markers = good_markers;
         }
     
-        
+        //- overlay an image
+        for(size_t i = 0; i < detected_markers.size(); i++) {
+            printf("marker #%Iu\n", i);
+        }
+
 
         if(waitKey(255) == 27)
             break;
