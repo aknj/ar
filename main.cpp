@@ -69,12 +69,13 @@ Mat bit_matrix_rotate(Mat in) {
 
 int marker_hamm_dist(Mat bits) {
     //- parity check matrix
-    int H_data[3][5] = {
+    bool H_data[3][5] = {
         {0, 0, 1, 0, 1},            // the first parity check bit is inverted
         {0, 1, 1, 0, 0},
         {0, 0, 0, 1, 1}
     };
-    Mat H = Mat(3, 5, false, &H_data);
+    Mat H = Mat(3, 5, CV_8UC1, H_data);
+    // cout << "H = " << endl << H << endl << endl;
     
     int dist = 0;
     
@@ -83,28 +84,37 @@ int marker_hamm_dist(Mat bits) {
         vector<int> z;
 
         for(int i = 0; i < H.rows; i++) {
-            int sum = 0;
 
             Mat bit_sum = H.row(i) & bits.row(p);
             
             z.push_back(countNonZero(bit_sum));
 
-            // cout << "z = " << endl << " " << z << endl << endl;
+            // printf("z[1]: %d \n", z[i]);
+
+            int z_count(countNonZero(z));
+            if(z_count < min_sum)
+                min_sum =  z_count;
         }
 
-        copy(   z.begin(), 
-                z.end(), 
-                ostream_iterator<int>(cout, " ") );
-        printf("\n");
+        dist += min_sum;
 
+        // copy(   z.begin(), 
+        //         z.end(), 
+        //         ostream_iterator<int>(cout, " ") );
+        // printf("\n");
     }
 
-    return 0;
+    return dist;
 }
 
 int matrix_to_id(const Mat &bits) {
     int val = 0;
     for(int y = 0; y < 5; y++) {
+        cout << bits.at<uchar>(y,0) << " " <<
+                bits.at<uchar>(y,1) << " " <<
+                bits.at<uchar>(y,2) << " " <<
+                bits.at<uchar>(y,3) << " " <<
+                bits.at<uchar>(y,4) << " " << endl;
         val <<= 1;
         if(bits.at<uchar>(y,2)) val|=1;
         val <<= 1;
@@ -113,7 +123,7 @@ int matrix_to_id(const Mat &bits) {
     return val;
 }
 
-int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
+int read_marker_id(Mat &marker_image, int &n_rotations) {
     assert(marker_image.rows == marker_image.cols);
     assert(marker_image.type() == CV_8UC1);
 
@@ -162,16 +172,16 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
         }
     }
 
-    if(it%200 == 0) {
-        for(int x = 0; x < 5; x++) {
-            for(int y = 0; y < 5; y++) {
-                printf(" %i", bit_matrix.at<uchar>(x, y));
-            } 
-            printf("\n");
-        }
-        printf("\n");
-        imshow("binary marker", grey);
-    }
+    // if(it%200 == 0) {
+    //     for(int x = 0; x < 5; x++) {
+    //         for(int y = 0; y < 5; y++) {
+    //             printf(" %i", bit_matrix.at<uchar>(x, y));
+    //         } 
+    //         printf("\n");
+    //     }
+    //     printf("\n");
+    //     imshow("binary marker", grey);
+    // }
 
     //- check all possible rotations
     Mat bit_matrix_rotations[4];
@@ -195,9 +205,8 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
 
     n_rotations = min_dist.second;
     if(min_dist.first == 0) {
-        printf("min_dist: %d", min_dist.first);
+        printf("min_dist: %d ", min_dist.first);
         return matrix_to_id(bit_matrix_rotations[min_dist.second]);
-        // return 1;
     }
 
     return -1;
@@ -444,7 +453,7 @@ int main() {
                 // int n_rotations;
                 // read_marker_id(canonical_marker_image, n_rotations, it);
                 int n_rotations;
-                int id = read_marker_id(canonical_marker_image, n_rotations, it);
+                int id = read_marker_id(canonical_marker_image, n_rotations);
                 if(id != -1) {
                     marker.id = id;
                     //- sort the points of the marker according to its data
