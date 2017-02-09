@@ -29,18 +29,18 @@ typedef struct {
 
 float perimeter(vector<Point2f> &a) {
     float dx, dy;
-    float sum=0;
+    float sum = 0;
     
-    for(size_t i=0; i < a.size(); i++) {
-        size_t i2=(i+1) % a.size();
+    for(size_t i = 0; i < a.size(); i++) {
+        size_t i2 = (i+1) % a.size();
     
         dx = a[i].x - a[i2].x;
         dy = a[i].y - a[i2].y;
     
         sum += sqrt(dx*dx + dy*dy);
-  }
+    }
   
-  return sum;
+    return sum;
 }
 
 /**
@@ -78,25 +78,23 @@ int marker_hamm_dist(Mat bits) {
         {0, 1, 1, 0, 0}
     };
 
-    int dist=0;
+    int dist = 0;
     
-    for (int y=0;y<5;y++) {
-        int minSum=1e5; //hamming distance to each possible word
+    for (int y = 0; y < 5; y++) {
+        int min_sum = 1e5; 
         
-        for (int p=0;p<4;p++) {
-            int sum=0;
-            //now, count
-            for (int x=0;x<5;x++)
-            {
-                sum += bits.at<uchar>(y,x) == words[p][x] ? 0 : 1;
+        for(int p = 0; p < 4; p++) {
+            int sum = 0;
+            // counting
+            for(int x = 0; x < 5; x++) {
+                sum += bits.at<uchar>(y, x) == words[p][x] ? 0 : 1;
             }
         
-            if (minSum>sum)
-                minSum=sum;
+            if(min_sum > sum)
+                min_sum = sum;
         }
         
-        //do the and
-        dist += minSum;
+        dist += min_sum;
     }
     
     return dist;
@@ -105,21 +103,18 @@ int marker_hamm_dist(Mat bits) {
 int matrix_to_id(const Mat &bits) {
     int val = 0;
     for(int y = 0; y < 5; y++) {
-        // printf("blaaaaaaa %u c     ", bits.at<uchar>(y,0));
-        cout << (int)bits.at<uchar>(y,0) << " " <<
-                (int)bits.at<uchar>(y,1) << " " <<
-                (int)bits.at<uchar>(y,2) << " " <<
-                (int)bits.at<uchar>(y,3) << " " <<
-                (int)bits.at<uchar>(y,4) << " " << endl;
         val <<= 1;
         if(bits.at<uchar>(y,2)) val|=1;
         val <<= 1;
         if(bits.at<uchar>(y,4)) val|=1;
     }
-    return val;
+    if(val == 0) 
+        return -1;
+    else
+        return val;
 }
 
-int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
+int read_marker_id(Mat &marker_image, int &n_rotations) {
     assert(marker_image.rows == marker_image.cols);
     assert(marker_image.type() == CV_8UC1);
 
@@ -127,7 +122,7 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
 
     //- threshold image
     threshold(grey, grey, 125, 255, THRESH_BINARY | THRESH_OTSU);
-    namedWindow("binary marker", 1);
+    // namedWindow("binary marker", 1);
 
     //- markers are divided in 7x7, of which the inner 5x5 belongs to marker
     //--info. the external border should be entirely black
@@ -186,38 +181,38 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
     bit_matrix_rotations[0] = bit_matrix;
     distances[0] = marker_hamm_dist(bit_matrix_rotations[0]);
 
-    if(it%100 == 0) {
-        for(int x = 0; x < 5; x++) {
-            for(int y = 0; y < 5; y++) {
-                printf(" %i", bit_matrix_rotations[0].at<uchar>(x, y));
-            } 
-            printf("\n");
-        }
-        printf("\n");
-        printf("distances: %d\n\n", distances[0]);
-        imshow("binary marker", grey);
-    }
+    // if(it%100 == 0) {
+    //     for(int x = 0; x < 5; x++) {
+    //         for(int y = 0; y < 5; y++) {
+    //             printf(" %i", bit_matrix_rotations[0].at<uchar>(x, y));
+    //         } 
+    //         printf("\n");
+    //     }
+    //     printf("\n");
+    //     printf("distances: %d\n\n", distances[0]);
+    //     imshow("binary marker", grey);
+    // }
 
-    pair<int,int> min_dist(distances[0],0);
+    pair<int,int> min_dist(distances[0], 0);
 
-    for(int i=1; i < 4; i++) {
+    for(int i = 1; i < 4; i++) {
         //- get hamming distance
         bit_matrix_rotations[i] = bit_matrix_rotate(bit_matrix_rotations[i-1]);
         distances[i] = marker_hamm_dist(bit_matrix_rotations[i]);
         // cout << "iteracja " << it << " | " << "distances[" << i << "] = " <<
         //         distances[i] << endl;
 
-        if(it%100 == 0) {
-            for(int x = 0; x < 5; x++) {
-                for(int y = 0; y < 5; y++) {
-                    printf(" %i", bit_matrix_rotations[i].at<uchar>(x, y));
-                } 
-                printf("\n");
-            }
-            printf("\n");
-            printf("distances: %d\n\n", distances[i]);
-            imshow("binary marker", grey);
-        }
+        // if(it%100 == 0) {
+        //     for(int x = 0; x < 5; x++) {
+        //         for(int y = 0; y < 5; y++) {
+        //             printf(" %i", bit_matrix_rotations[i].at<uchar>(x, y));
+        //         } 
+        //         printf("\n");
+        //     }
+        //     printf("\n");
+        //     printf("distances: %d\n\n", distances[i]);
+        //     imshow("binary marker", grey);
+        // }
 
         if(distances[i] < min_dist.first) {
             min_dist.first = distances[i];
@@ -293,12 +288,6 @@ int main() {
         //- manipulate frame
         cvtColor(frame, grayscale, CV_BGRA2GRAY);
         Mat marker_image = grayscale.clone();
-
-        //-- smoothing (de-noising)
-        // bilateralFilter(frame, denoised, 5, 100, 100);
-        // adaptiveBilateralFilter(frame, denoised, Size(5, 5), 100);
-        // GaussianBlur(blurred, blurred, Size(3, 3), 0, 0);
-        // medianBlur(frame, blurred, 5);
 
         
         int thr_blocksize = t1 / 2 * 2 + 3;
@@ -474,10 +463,8 @@ int main() {
                 // }
 //# enddebug
 
-                // int n_rotations;
-                // read_marker_id(canonical_marker_image, n_rotations, it);
                 int n_rotations;
-                int id = read_marker_id(canonical_marker_image, n_rotations, it);
+                int id = read_marker_id(canonical_marker_image, n_rotations);
                 if(id != -1) {
                     marker.id = id;
                     //- sort the points of the marker according to its data
@@ -519,35 +506,38 @@ int main() {
             }
 
             detected_markers = good_markers;
-        }
+        
     
-        //- overlay an image
-        Mat markers_vis = frame.clone();
-        //- debug
-        for(size_t i = 0; i < detected_markers.size(); i++) {
-            marker_t& m = detected_markers[i];
-            char label[15];
-            // sprintf(label, "marker #%lu", i);
-            // printf(" %s\t", label);
-            // printf("id: %d\n", detected_markers[i].id);
-            sprintf(label, "#%lu, id=%d", i, m.id);
-            Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
+            //- overlay an image
+            Mat markers_vis = frame.clone();
+            //- debug
+            for(size_t i = 0; i < detected_markers.size(); i++) {
+                marker_t& m = detected_markers[i];
+                char label[15];
+                // sprintf(label, "marker #%lu", i);
+                // printf(" %s\t", label);
+                // printf("id: %d\n", detected_markers[i].id);
+                sprintf(label, "#%lu, id=%d", i, m.id);
+                Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
 
-            {
-                draw_polygon(markers_vis, detected_markers[i].points, color);
-                //Mat marker_sub_image = marker_image(boundingRect(marker.points));
+                {
+                    draw_polygon(markers_vis, detected_markers[i].points, color);
+                    //Mat marker_sub_image = marker_image(boundingRect(marker.points));
 
-                //- drawing numbers
-                putText(markers_vis, label, detected_markers[i].points[1], 
-                        FONT_HERSHEY_SIMPLEX, .5, color);
+                    //- drawing numbers
+                    putText(markers_vis, label, detected_markers[i].points[1], 
+                            FONT_HERSHEY_SIMPLEX, .5, color);
 
-                namedWindow("markers", 1);
+                    namedWindow("markers", 1);
+                }
+
+                if(m.id == 300) {
+                    putText(markers_vis, "wow!", m.points[3], 
+                            FONT_HERSHEY_SIMPLEX, .5, color);
+                }
             }
 
-            if(m.id == 300) {
-                putText(markers_vis, "wow!", m.points[3], 
-                        FONT_HERSHEY_SIMPLEX, .5, color);
-            }
+            imshow("markers", markers_vis);
         }
 
 
@@ -561,7 +551,7 @@ int main() {
         imshow("threshold", thresholdImg);
         imshow("contours_prev", contours_prev);
         imshow("markers_cand", markers_prev);
-        imshow("markers", markers_vis);
+        
 
     }
 
