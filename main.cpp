@@ -421,8 +421,12 @@ int main() {
         }
     
         //- overlay an image
+        //- debug
         for(size_t i = 0; i < detected_markers.size(); i++) {
-            printf("marker #%Iu\n", i);
+            char label[15];
+            sprintf(label, "marker #%lu", i);
+            printf(" %s\n", label);
+            //namedWindow()
         }
 
 
