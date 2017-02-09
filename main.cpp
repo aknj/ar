@@ -61,9 +61,11 @@ Mat bit_matrix_rotate(Mat in) {
     in.copyTo(out);
     for(int i = 0; i < in.rows; i++) {
         for(int j = 0; j < in.cols; j++) {
-            out.at<uchar>(i, j) = in.at<uchar>(j, in.rows-1-i);
+            out.at<uchar>(i, j) = in.at<uchar>(in.cols-1-j, i);
         }
     }
+    // cout << "in = " << endl << in << endl;
+    // cout << "out = " << endl << out << endl;
     return out;
 }
 
@@ -82,10 +84,14 @@ int marker_hamm_dist(Mat bits) {
     for(int p = 0; p < bits.rows; p++) {
         int min_sum = 1e5;
         vector<int> z;
+        // cout << "bits.row(" << p << "): " << bits.row(p) << endl;
 
         for(int i = 0; i < H.rows; i++) {
 
             Mat bit_sum = H.row(i) & bits.row(p);
+            cout << "H.row(" << i << "):    " << H.row(i) << endl;
+            cout << "bits.row(" << p << "): " << bits.row(p) << endl;
+            cout << "bit_sum:     " << bit_sum << endl;
             
             z.push_back(countNonZero(bit_sum));
 
@@ -110,11 +116,12 @@ int marker_hamm_dist(Mat bits) {
 int matrix_to_id(const Mat &bits) {
     int val = 0;
     for(int y = 0; y < 5; y++) {
-        cout << bits.at<uchar>(y,0) << " " <<
-                bits.at<uchar>(y,1) << " " <<
-                bits.at<uchar>(y,2) << " " <<
-                bits.at<uchar>(y,3) << " " <<
-                bits.at<uchar>(y,4) << " " << endl;
+        // printf("blaaaaaaa %u c     ", bits.at<uchar>(y,0));
+        cout << (int)bits.at<uchar>(y,0) << " " <<
+                (int)bits.at<uchar>(y,1) << " " <<
+                (int)bits.at<uchar>(y,2) << " " <<
+                (int)bits.at<uchar>(y,3) << " " <<
+                (int)bits.at<uchar>(y,4) << " " << endl;
         val <<= 1;
         if(bits.at<uchar>(y,2)) val|=1;
         val <<= 1;
@@ -123,7 +130,7 @@ int matrix_to_id(const Mat &bits) {
     return val;
 }
 
-int read_marker_id(Mat &marker_image, int &n_rotations) {
+int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
     assert(marker_image.rows == marker_image.cols);
     assert(marker_image.type() == CV_8UC1);
 
@@ -196,12 +203,15 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
         //- get hamming distance
         bit_matrix_rotations[i] = bit_matrix_rotate(bit_matrix_rotations[i-1]);
         distances[i] = marker_hamm_dist(bit_matrix_rotations[i]);
+        cout << "iteracja " << it << " | " << "distances[" << i << "] = " <<
+                distances[i] << endl;
 
         if(distances[i] < min_dist.first) {
             min_dist.first = distances[i];
             min_dist.second = i;
         }
     }
+    cout << "iteracja " << it << " | " << min_dist.second << endl;
 
     n_rotations = min_dist.second;
     if(min_dist.first == 0) {
@@ -453,7 +463,7 @@ int main() {
                 // int n_rotations;
                 // read_marker_id(canonical_marker_image, n_rotations, it);
                 int n_rotations;
-                int id = read_marker_id(canonical_marker_image, n_rotations);
+                int id = read_marker_id(canonical_marker_image, n_rotations, it);
                 if(id != -1) {
                     marker.id = id;
                     //- sort the points of the marker according to its data
@@ -472,7 +482,7 @@ int main() {
         //- debug
         for(size_t i = 0; i < detected_markers.size(); i++) {
             char label[15];
-            sprintf(label, "marker #%lu", i);
+            sprintf(label, "\nmarker #%lu", i);
             printf(" %s\t", label);
             printf("id: %d\n", detected_markers[i].id);
         }
