@@ -71,53 +71,34 @@ Mat bit_matrix_rotate(Mat in) {
 
 int marker_hamm_dist(Mat bits) {
     //- parity check matrix
-    bool H_data[3][5] = {
-        {0, 0, 1, 0, 1},            // the first parity check bit is inverted
-        {0, 1, 1, 0, 0},
-        {0, 0, 0, 1, 1}
+    bool words[4][5] = {
+        {1, 0, 0, 0, 0},            // the first parity check bit is inverted
+        {1, 0, 1, 1, 1},
+        {0, 1, 0, 0, 1},
+        {0, 1, 1, 1, 0}
     };
-    Mat H = Mat(3, 5, CV_8UC1, H_data);
-    // cout << "H = " << endl << H << endl << endl;
-    
-    int dist = 0;
-    
-    for(int p = 0; p < bits.rows; p++) {
-        int min_sum = 1e5;
-        vector<int> z;
 
-        if(countNonZero(bits.row(p)) == 0)
-            return min_sum;     // if a word is 00000, it can't be a valid marker
+    int dist=0;
+    
+    for (int y=0;y<5;y++) {
+        int minSum=1e5; //hamming distance to each possible word
         
-        // cout << "bits.row(" << p << "): " << bits.row(p) << endl;
-
-        for(int i = 0; i < H.rows; i++) {
-
-            Mat bit_sum = H.row(i) & bits.row(p);
-            // cout << "H.row(" << i << "):    " << H.row(i) << endl;
-            // cout << "bits.row(" << p << "): " << bits.row(p) << endl;
-            // cout << "bit_sum:     " << bit_sum << endl;
-            
-            z.push_back(countNonZero(bit_sum));
-
-            // printf("z[1]: %d \n", z[i]);
-
-            int z_count(countNonZero(z));
-            if(z_count < min_sum)
-                min_sum =  z_count;
+        for (int p=0;p<4;p++) {
+            int sum=0;
+            //now, count
+            for (int x=0;x<5;x++)
+            {
+                sum += bits.at<uchar>(y,x) == words[p][x] ? 0 : 1;
+            }
+        
+            if (minSum>sum)
+                minSum=sum;
         }
-
-        // cout << "min_sum: " << min_sum << endl;
-        // cout << "dist: " << dist << endl;
-
-        dist += min_sum;
-
-        // copy(   z.begin(), 
-        //         z.end(), 
-        //         ostream_iterator<int>(cout, " ") );
-        // printf("\n");
+        
+        //do the and
+        dist += minSum;
     }
-
-    cout << "dist: " << dist << endl;
+    
     return dist;
 }
 
@@ -483,6 +464,8 @@ int main() {
                 }
             }
 
+            cout << "detected: " << detected_markers.size() << endl;
+            cout << "good:     " << good_markers.size() << endl;
             detected_markers = good_markers;
         }
     
