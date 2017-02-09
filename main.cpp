@@ -3,6 +3,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stdio.h>
 #include <iostream>
+#include <bitset>
+#include <algorithm>    // for copy
+#include <iterator>     // for ostream_iterator
 
 using namespace std;
 using namespace cv;
@@ -67,20 +70,33 @@ Mat bit_matrix_rotate(Mat in) {
 int marker_hamm_dist(Mat bits) {
     //- parity check matrix
     int H_data[3][5] = {
-        {1, 0, 1, 0, 1},
+        {0, 0, 1, 0, 1},            // the first parity check bit is inverted
         {0, 1, 1, 0, 0},
         {0, 0, 0, 1, 1}
     };
     Mat H = Mat(3, 5, false, &H_data);
-
+    
+    int dist = 0;
     
     for(int p = 0; p < bits.rows; p++) {
+        int min_sum = 1e5;
+        vector<int> z;
+
         for(int i = 0; i < H.rows; i++) {
-            int sum_dist = 0;
-            Mat z = H.row(i) & bits.row(p);
-            // printf("bla %d ", z.cols);
-            cout << "z = " << endl << " " << z << endl << endl;
+            int sum = 0;
+
+            Mat bit_sum = H.row(i) & bits.row(p);
+            
+            z.push_back(countNonZero(bit_sum));
+
+            // cout << "z = " << endl << " " << z << endl << endl;
         }
+
+        copy(   z.begin(), 
+                z.end(), 
+                ostream_iterator<int>(cout, " ") );
+        printf("\n");
+
     }
 
     return 0;
