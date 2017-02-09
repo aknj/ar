@@ -219,11 +219,9 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
             min_dist.second = i;
         }
     }
-    // cout << "iteracja " << it << " | " << min_dist.second << endl;
 
     n_rotations = min_dist.second;
     if(min_dist.first == 0) {
-        printf("min_dist: %d ", min_dist.first);
         return matrix_to_id(bit_matrix_rotations[min_dist.second]);
     }
 
@@ -284,6 +282,9 @@ int main() {
 
         if(!cap.retrieve(frame) || frame.empty())
             continue;
+
+        //- copy frame to marker visualization Mat
+        Mat markers_vis = frame.clone();
 
         //- manipulate frame
         cvtColor(frame, grayscale, CV_BGRA2GRAY);
@@ -509,14 +510,10 @@ int main() {
         
     
             //- overlay an image
-            Mat markers_vis = frame.clone();
             //- debug
             for(size_t i = 0; i < detected_markers.size(); i++) {
                 marker_t& m = detected_markers[i];
                 char label[15];
-                // sprintf(label, "marker #%lu", i);
-                // printf(" %s\t", label);
-                // printf("id: %d\n", detected_markers[i].id);
                 sprintf(label, "#%lu, id=%d", i, m.id);
                 Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
 
@@ -537,7 +534,6 @@ int main() {
                 }
             }
 
-            imshow("markers", markers_vis);
         }
 
 
@@ -551,7 +547,7 @@ int main() {
         imshow("threshold", thresholdImg);
         imshow("contours_prev", contours_prev);
         imshow("markers_cand", markers_prev);
-        
+        imshow("markers", markers_vis);
 
     }
 
