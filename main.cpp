@@ -2,6 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stdio.h>
+#include <iostream>
 
 using namespace std;
 using namespace cv;
@@ -65,13 +66,35 @@ Mat bit_matrix_rotate(Mat in) {
 
 int marker_hamm_dist(Mat bits) {
     //- parity check matrix
-    int H_data[3][6] = {
-        {1, 0, 1, 0, 1, 0},
-        {0, 1, 1, 0, 0, 1},
-        {0, 0, 0, 1, 1, 1}
+    int H_data[3][5] = {
+        {1, 0, 1, 0, 1},
+        {0, 1, 1, 0, 0},
+        {0, 0, 0, 1, 1}
     };
-    Mat H = Mat(3, 6, CV_8UC1, &H_data);
+    Mat H = Mat(3, 5, false, &H_data);
+
+    
+    for(int p = 0; p < bits.rows; p++) {
+        for(int i = 0; i < H.rows; i++) {
+            int sum_dist = 0;
+            Mat z = H.row(i) & bits.row(p);
+            // printf("bla %d ", z.cols);
+            cout << "z = " << endl << " " << z << endl << endl;
+        }
+    }
+
     return 0;
+}
+
+int matrix_to_id(const Mat &bits) {
+    int val = 0;
+    for(int y = 0; y < 5; y++) {
+        val <<= 1;
+        if(bits.at<uchar>(y,2)) val|=1;
+        val <<= 1;
+        if(bits.at<uchar>(y,4)) val|=1;
+    }
+    return val;
 }
 
 int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
@@ -83,19 +106,18 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
     //- threshold image
     threshold(grey, grey, 125, 255, THRESH_BINARY | THRESH_OTSU);
     namedWindow("binary marker", 1);
-    // imshow("binary marker", grey);
 
-    //- markers are divided in 8x8, of which the inner 6x6 belongs to marker
+    //- markers are divided in 7x7, of which the inner 5x5 belongs to marker
     //--info. the external border should be entirely black
 
-    int cell_size = marker_image.rows / 8;
+    int cell_size = marker_image.rows / 7;
 
-    for(int y=0; y < 8; y++) {
-        int inc = 7;
+    for(int y=0; y < 7; y++) {
+        int inc = 6;
 
-        if(y==0 || y==7) inc = 1; // for 1st and last row, check whole border
+        if(y==0 || y==6) inc = 1; // for 1st and last row, check whole border
 
-        for(int x=0; x < 8; x+=inc) {
+        for(int x=0; x < 7; x+=inc) {
             int cellX = x * cell_size;
             int cellY = y * cell_size;
             Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
@@ -109,11 +131,11 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
         }
     }
 
-    Mat bit_matrix = Mat::zeros(6, 6, CV_8UC1);
+    Mat bit_matrix = Mat::zeros(5, 5, CV_8UC1);
 
     //- get info (for each inner square, determiine if it is black or white)
-    for(int y=0; y < 6; y++) {
-        for(int x=0; x < 6; x++) {
+    for(int y=0; y < 5; y++) {
+        for(int x=0; x < 5; x++) {
             int cellX = (x+1) * cell_size;
             int cellY = (y+1) * cell_size;
             Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
@@ -124,9 +146,9 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
         }
     }
 
-    if(it%300 == 0) {
-        for(int x = 0; x < 6; x++) {
-            for(int y = 0; y < 6; y++) {
+    if(it%200 == 0) {
+        for(int x = 0; x < 5; x++) {
+            for(int y = 0; y < 5; y++) {
                 printf(" %i", bit_matrix.at<uchar>(x, y));
             } 
             printf("\n");
@@ -157,8 +179,9 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
 
     n_rotations = min_dist.second;
     if(min_dist.first == 0) {
-        //return matrix_to_id(bit_matrix_rotations[min_dist.first]);
-        return 1;
+        printf("min_dist: %d", min_dist.first);
+        return matrix_to_id(bit_matrix_rotations[min_dist.second]);
+        // return 1;
     }
 
     return -1;
@@ -425,10 +448,9 @@ int main() {
         for(size_t i = 0; i < detected_markers.size(); i++) {
             char label[15];
             sprintf(label, "marker #%lu", i);
-            printf(" %s\n", label);
-            //namedWindow()
+            printf(" %s\t", label);
+            printf("id: %d\n", detected_markers[i].id);
         }
-
 
         if(waitKey(255) == 27)
             break;
