@@ -15,10 +15,21 @@ const int HEIGHT = 240 * 1.2;
 const int FPS = 5;
 
 const int marker_min_contour_length_allowed = 100;
-const Size marker_size = Size(100,100);
-vector<Point2f> m_marker_corners2d;
 
-typedef vector<Point2f> Marker;
+const Size marker_size = Size(100,100);
+
+//- marker corners for perspective transformation
+static const Point2f arr[] = {
+    Point2f(0,0),
+    Point2f(marker_size.width-1,0),
+    Point2f(marker_size.width-1,marker_size.height-1),
+    Point2f(0,marker_size.height-1)
+};
+vector<Point2f> m_marker_corners2d(arr, arr + sizeof(arr) / sizeof(arr[0]));
+// m_marker_corners2d.push_back(Point2f(0,0));
+// m_marker_corners2d.push_back(Point2f(marker_size.width-1,0));
+// m_marker_corners2d.push_back(Point2f(marker_size.width-1,marker_size.height-1));
+// m_marker_corners2d.push_back(Point2f(0,marker_size.height-1));
 
 typedef struct {
     vector<Point2f> points;
@@ -47,7 +58,7 @@ float perimeter(vector<Point2f> &a) {
  * function draws polygons with a random color of line
  */
 void draw_polygon(Mat mat_name, vector<Point2f> &poly, 
-                  Scalar color = Scalar(rand() % 255,rand() % 255,rand() % 255)) 
+                  Scalar color = Scalar(rand()%255, rand()%255, rand()%255)) 
 {
     for(size_t i = 0; i < poly.size(); i++) {
         size_t i2 = (i+1) % poly.size();
@@ -142,7 +153,6 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
             int n_z = countNonZero(cell);
 
             if(n_z > (cell_size * cell_size) / 2) {
-                // return;
                 return -1; // cannot be a marker bc the border elem is not black
             } 
         }
@@ -163,17 +173,6 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
         }
     }
 
-    // if(it%200 == 0) {
-    //     for(int x = 0; x < 5; x++) {
-    //         for(int y = 0; y < 5; y++) {
-    //             printf(" %i", bit_matrix.at<uchar>(x, y));
-    //         } 
-    //         printf("\n");
-    //     }
-    //     printf("\n");
-    //     imshow("binary marker", grey);
-    // }
-
     //- check all possible rotations
     Mat bit_matrix_rotations[4];
     int distances[4];
@@ -181,38 +180,12 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
     bit_matrix_rotations[0] = bit_matrix;
     distances[0] = marker_hamm_dist(bit_matrix_rotations[0]);
 
-    // if(it%100 == 0) {
-    //     for(int x = 0; x < 5; x++) {
-    //         for(int y = 0; y < 5; y++) {
-    //             printf(" %i", bit_matrix_rotations[0].at<uchar>(x, y));
-    //         } 
-    //         printf("\n");
-    //     }
-    //     printf("\n");
-    //     printf("distances: %d\n\n", distances[0]);
-    //     imshow("binary marker", grey);
-    // }
-
     pair<int,int> min_dist(distances[0], 0);
 
     for(int i = 1; i < 4; i++) {
         //- get hamming distance
         bit_matrix_rotations[i] = bit_matrix_rotate(bit_matrix_rotations[i-1]);
         distances[i] = marker_hamm_dist(bit_matrix_rotations[i]);
-        // cout << "iteracja " << it << " | " << "distances[" << i << "] = " <<
-        //         distances[i] << endl;
-
-        // if(it%100 == 0) {
-        //     for(int x = 0; x < 5; x++) {
-        //         for(int y = 0; y < 5; y++) {
-        //             printf(" %i", bit_matrix_rotations[i].at<uchar>(x, y));
-        //         } 
-        //         printf("\n");
-        //     }
-        //     printf("\n");
-        //     printf("distances: %d\n\n", distances[i]);
-        //     imshow("binary marker", grey);
-        // }
 
         if(distances[i] < min_dist.first) {
             min_dist.first = distances[i];
@@ -266,11 +239,6 @@ int main() {
     createTrackbar("thr_c", "contours_prev", &t2, 20);
 
 
-    m_marker_corners2d.push_back(Point2f(0,0));
-    m_marker_corners2d.push_back(Point2f(marker_size.width-1,0));
-    m_marker_corners2d.push_back(Point2f(marker_size.width-1,marker_size.height-1));
-    m_marker_corners2d.push_back(Point2f(0,marker_size.height-1));
-
     for(;;) {
         if(!cap.grab())
             continue;
@@ -299,18 +267,18 @@ int main() {
                           CV_THRESH_BINARY_INV, thr_blocksize, thr_c);
         
 
-        vector<vector<Point> > allContours;
+        vector<vector<Point> > all_contours;
         vector<vector<Point> > contours;
 
-        Mat contoursImg;
-        thresholdImg.copyTo(contoursImg);
-        findContours(contoursImg, allContours, CV_RETR_LIST, 
+        Mat contours_img;
+        thresholdImg.copyTo(contours_img);
+        findContours(contours_img, all_contours, CV_RETR_LIST, 
                      CV_CHAIN_APPROX_NONE);
 
-        for(size_t i = 0; i < allContours.size(); i++) {
-            int contourSize = allContours[i].size();
+        for(size_t i = 0; i < all_contours.size(); i++) {
+            int contourSize = all_contours[i].size();
             if(contourSize > 4) {
-                contours.push_back(allContours[i]);
+                contours.push_back(all_contours[i]);
             }
         }
 
