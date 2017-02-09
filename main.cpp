@@ -465,12 +465,12 @@ int main() {
                                 marker_transform, marker_size);
 
 //# debug
-                {
-                    draw_polygon(marker_image, marker.points, Scalar(255, 0, 0));
-                    Mat marker_sub_image = marker_image(boundingRect(marker.points));
+                // {
+                //     draw_polygon(marker_image, marker.points, Scalar(255, 0, 0));
+                //     Mat marker_sub_image = marker_image(boundingRect(marker.points));
 
-                    namedWindow("markers", 1);
-                }
+                //     namedWindow("markers", 1);
+                // }
 //# enddebug
 
                 // int n_rotations;
@@ -494,13 +494,28 @@ int main() {
         }
     
         //- overlay an image
+        Mat markers_vis = frame.clone();
         //- debug
         for(size_t i = 0; i < detected_markers.size(); i++) {
             char label[15];
-            sprintf(label, "\nmarker #%lu", i);
-            printf(" %s\t", label);
-            printf("id: %d\n", detected_markers[i].id);
+            // sprintf(label, "marker #%lu", i);
+            // printf(" %s\t", label);
+            // printf("id: %d\n", detected_markers[i].id);
+            sprintf(label, "#%lu, id=%d", i, detected_markers[i].id);
+
+            {
+                Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
+                draw_polygon(markers_vis, detected_markers[i].points, color);
+                //Mat marker_sub_image = marker_image(boundingRect(marker.points));
+
+                //- drawing numbers
+                putText(markers_vis, label, detected_markers[i].points[1], 
+                        FONT_HERSHEY_SIMPLEX, .5, color);
+
+                namedWindow("markers", 1);
+            }
         }
+
 
         if(waitKey(255) == 27)
             break;
@@ -512,7 +527,7 @@ int main() {
         imshow("threshold", thresholdImg);
         imshow("contours_prev", contours_prev);
         imshow("markers_cand", markers_prev);
-        imshow("markers", marker_image);
+        imshow("markers", markers_vis);
 
     }
 
