@@ -84,14 +84,18 @@ int marker_hamm_dist(Mat bits) {
     for(int p = 0; p < bits.rows; p++) {
         int min_sum = 1e5;
         vector<int> z;
+
+        if(countNonZero(bits.row(p)) == 0)
+            return min_sum;     // if a word is 00000, it can't be a valid marker
+        
         // cout << "bits.row(" << p << "): " << bits.row(p) << endl;
 
         for(int i = 0; i < H.rows; i++) {
 
             Mat bit_sum = H.row(i) & bits.row(p);
-            cout << "H.row(" << i << "):    " << H.row(i) << endl;
-            cout << "bits.row(" << p << "): " << bits.row(p) << endl;
-            cout << "bit_sum:     " << bit_sum << endl;
+            // cout << "H.row(" << i << "):    " << H.row(i) << endl;
+            // cout << "bits.row(" << p << "): " << bits.row(p) << endl;
+            // cout << "bit_sum:     " << bit_sum << endl;
             
             z.push_back(countNonZero(bit_sum));
 
@@ -102,6 +106,9 @@ int marker_hamm_dist(Mat bits) {
                 min_sum =  z_count;
         }
 
+        // cout << "min_sum: " << min_sum << endl;
+        // cout << "dist: " << dist << endl;
+
         dist += min_sum;
 
         // copy(   z.begin(), 
@@ -110,6 +117,7 @@ int marker_hamm_dist(Mat bits) {
         // printf("\n");
     }
 
+    cout << "dist: " << dist << endl;
     return dist;
 }
 
@@ -203,15 +211,15 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
         //- get hamming distance
         bit_matrix_rotations[i] = bit_matrix_rotate(bit_matrix_rotations[i-1]);
         distances[i] = marker_hamm_dist(bit_matrix_rotations[i]);
-        cout << "iteracja " << it << " | " << "distances[" << i << "] = " <<
-                distances[i] << endl;
+        // cout << "iteracja " << it << " | " << "distances[" << i << "] = " <<
+        //         distances[i] << endl;
 
         if(distances[i] < min_dist.first) {
             min_dist.first = distances[i];
             min_dist.second = i;
         }
     }
-    cout << "iteracja " << it << " | " << min_dist.second << endl;
+    // cout << "iteracja " << it << " | " << min_dist.second << endl;
 
     n_rotations = min_dist.second;
     if(min_dist.first == 0) {
