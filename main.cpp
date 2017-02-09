@@ -73,9 +73,9 @@ int marker_hamm_dist(Mat bits) {
     //- parity check matrix
     bool words[4][5] = {
         {1, 0, 0, 0, 0},            // the first parity check bit is inverted
-        {1, 0, 1, 1, 1},
-        {0, 1, 0, 0, 1},
-        {0, 1, 1, 1, 0}
+        {1, 1, 1, 1, 1},
+        {0, 0, 0, 1, 1},
+        {0, 1, 1, 0, 0}
     };
 
     int dist=0;
@@ -186,6 +186,18 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
     bit_matrix_rotations[0] = bit_matrix;
     distances[0] = marker_hamm_dist(bit_matrix_rotations[0]);
 
+    if(it%100 == 0) {
+        for(int x = 0; x < 5; x++) {
+            for(int y = 0; y < 5; y++) {
+                printf(" %i", bit_matrix_rotations[0].at<uchar>(x, y));
+            } 
+            printf("\n");
+        }
+        printf("\n");
+        printf("distances: %d\n\n", distances[0]);
+        imshow("binary marker", grey);
+    }
+
     pair<int,int> min_dist(distances[0],0);
 
     for(int i=1; i < 4; i++) {
@@ -194,6 +206,18 @@ int read_marker_id(Mat &marker_image, int &n_rotations, int it) {
         distances[i] = marker_hamm_dist(bit_matrix_rotations[i]);
         // cout << "iteracja " << it << " | " << "distances[" << i << "] = " <<
         //         distances[i] << endl;
+
+        if(it%100 == 0) {
+            for(int x = 0; x < 5; x++) {
+                for(int y = 0; y < 5; y++) {
+                    printf(" %i", bit_matrix_rotations[i].at<uchar>(x, y));
+                } 
+                printf("\n");
+            }
+            printf("\n");
+            printf("distances: %d\n\n", distances[i]);
+            imshow("binary marker", grey);
+        }
 
         if(distances[i] < min_dist.first) {
             min_dist.first = distances[i];
