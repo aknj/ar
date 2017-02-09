@@ -333,6 +333,7 @@ int main() {
         vector<marker_t> detected_markers;
         vector<Point> approx_curve;
         vector<marker_t> possible_markers;
+        vector<marker_t> good_markers;
 
         //-- for each contour, analyze if it is a parallelepiped likely to be 
         //---the marker
@@ -442,7 +443,7 @@ int main() {
         ////////////////////////////////////////////////////////////////////////
         //-- verify/recognize markers
         {
-            vector<marker_t> good_markers;
+            
             Mat canonical_marker_image;
             
             //- identify the markers
@@ -487,9 +488,36 @@ int main() {
                     good_markers.push_back(marker);
                 }
             }
+        }
 
-            cout << "detected: " << detected_markers.size() << endl;
-            cout << "good:     " << good_markers.size() << endl;
+
+        //- refine marker corners using sub pixel accuracy
+        if(good_markers.size() > 0) {
+            vector<Point2f> precise_corners(4 * good_markers.size());
+
+            for(size_t i = 0; i < good_markers.size(); i++) {
+                const marker_t& m = good_markers[i];
+
+                for(int c = 0; c < 4; c++) {
+                    precise_corners[i*4 + c] = m.points[c];
+                }
+            }
+
+            TermCriteria term_criteria = TermCriteria(   
+                TermCriteria::MAX_ITER | TermCriteria::EPS, 30, .01);
+            cornerSubPix(   grayscale, precise_corners, 
+                            Size(5,5), Size(-1,-1), 
+                            term_criteria);
+
+            //-copy refined corners positions back to markers
+            for(size_t i = 0; i < good_markers.size(); i++) {
+                marker_t& m = good_markers[i];
+
+                for(int c = 0; c < 4; c++) {
+                    m.points[c] = precise_corners[i*4 + c];
+                }
+            }
+
             detected_markers = good_markers;
         }
     
@@ -497,14 +525,15 @@ int main() {
         Mat markers_vis = frame.clone();
         //- debug
         for(size_t i = 0; i < detected_markers.size(); i++) {
+            marker_t& m = detected_markers[i];
             char label[15];
             // sprintf(label, "marker #%lu", i);
             // printf(" %s\t", label);
             // printf("id: %d\n", detected_markers[i].id);
-            sprintf(label, "#%lu, id=%d", i, detected_markers[i].id);
+            sprintf(label, "#%lu, id=%d", i, m.id);
+            Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
 
             {
-                Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
                 draw_polygon(markers_vis, detected_markers[i].points, color);
                 //Mat marker_sub_image = marker_image(boundingRect(marker.points));
 
@@ -513,6 +542,11 @@ int main() {
                         FONT_HERSHEY_SIMPLEX, .5, color);
 
                 namedWindow("markers", 1);
+            }
+
+            if(m.id == 300) {
+                putText(markers_vis, "wow!", m.points[3], 
+                        FONT_HERSHEY_SIMPLEX, .5, color);
             }
         }
 
