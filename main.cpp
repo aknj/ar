@@ -26,10 +26,7 @@ static const Point2f arr[] = {
     Point2f(0,marker_size.height-1)
 };
 vector<Point2f> m_marker_corners2d(arr, arr + sizeof(arr) / sizeof(arr[0]));
-// m_marker_corners2d.push_back(Point2f(0,0));
-// m_marker_corners2d.push_back(Point2f(marker_size.width-1,0));
-// m_marker_corners2d.push_back(Point2f(marker_size.width-1,marker_size.height-1));
-// m_marker_corners2d.push_back(Point2f(0,marker_size.height-1));
+
 
 typedef struct {
     vector<Point2f> points;
@@ -336,8 +333,8 @@ int main() {
 
             double o = (v1.x * v2.y) - (v1.y * v2.x);
 
-            if(o < 0.0)             //- if the 3rd point is in the left side, 
-                swap(m.points[1], m.points[3]);   //--then sort in anti-clockwise order
+            if(o < 0.0)               //- if the 3rd point is on the left side,  
+                swap(m.points[1], m.points[3]);        //--sort anti-clockwise 
 
 
             possible_markers.push_back(m);
@@ -371,7 +368,7 @@ int main() {
             }
         }
 
-        //-- mark for removal the element of the pair with smaller perimeter ???
+        //-- mark the element of the pair with smaller perimeter for removal
         vector<bool> removal_mask(possible_markers.size(), false);
 
         for(size_t i = 0; i < too_near_candidates.size(); i++) {
@@ -411,10 +408,6 @@ int main() {
 
                 //- find the perspective transformation that brings current
                 //--marker to rectangular form
-                
-
-                // printf("%d", m_marker_corners2d.size());
-
                 Mat marker_transform = getPerspectiveTransform(
                                             marker.points, m_marker_corners2d
                 );
@@ -425,8 +418,10 @@ int main() {
 
 //# debug
                 // {
-                //     draw_polygon(marker_image, marker.points, Scalar(255, 0, 0));
-                //     Mat marker_sub_image = marker_image(boundingRect(marker.points));
+                //     draw_polygon(marker_image, marker.points, 
+                //                  Scalar(255, 0, 0));
+                //     Mat marker_sub_image = 
+                //                  marker_image(boundingRect(marker.points));
 
                 //     namedWindow("markers", 1);
                 // }
@@ -447,7 +442,8 @@ int main() {
         }
 
 
-        //- refine marker corners using sub pixel accuracy
+        ////////////////////////////////////////////////////////////////////////
+        //- refine marker corners using subpixel accuracy
         if(good_markers.size() > 0) {
             vector<Point2f> precise_corners(4 * good_markers.size());
 
@@ -477,8 +473,8 @@ int main() {
             detected_markers = good_markers;
         
     
-            //- overlay an image
-            //- debug
+            ////////////////////////////////////////////////////////////////////
+            //- draw good markers' outlines and show their ids
             for(size_t i = 0; i < detected_markers.size(); i++) {
                 marker_t& m = detected_markers[i];
                 char label[15];
