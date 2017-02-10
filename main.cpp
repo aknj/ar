@@ -34,7 +34,11 @@ typedef struct {
     Mat transform;
 } marker_t;
 
-//enum {}
+// enum {
+//     106, 107, 108, 270, 300, 415
+// }
+
+static const int marker_ids[] = {106, 107, 108, 270, 300, 415};
 
 
 
@@ -223,13 +227,20 @@ int main() {
     namedWindow("markers_cand", 1);
 
     //- reading an image from file
-    Mat img;
+    vector<Mat> imgs;
 
-    img = imread("images/zn1.png", CV_LOAD_IMAGE_COLOR);
-    if(!img.data) {
-        printf("Could not open or find the image");
-        return -1;
+    for(int i = 0; i < 5; i++) {
+        char path[20]; 
+        sprintf(path, "images/%d.jpg", i+1);
+        imgs.push_back(imread(path, CV_LOAD_IMAGE_COLOR));
+        if(!imgs[i].data) {
+            printf("Could not open or find the image %s", path);
+            return -1;
+        }
+
+        resize(imgs[i], imgs[i], marker_size);
     }
+    
 
     //- trackbars for changing the parameters of adaptiveThreshold
     int t1 = 111;
@@ -513,28 +524,37 @@ int main() {
 
                 ////////////////////////////////////////////////////////////////
                 //- place images on output frame
-                if(m.id == 300) {
-                    // Mat img2 = Mat::zeros(marker_sub_images[i].size(), CV_16UC4);
-                    Mat img2 = Mat::zeros(markers_vis.size(), 
-                                            markers_vis.type());
-                    resize(img, img, marker_size);
-                    warpPerspective(img, img2, m.transform.inv(), 
-                                    img2.size());
-                    // namedWindow("img2", 1);
-                    // imshow("img2", img2);
-                    Mat mask = img2 > 0;
+                // if(m.id == 300) {
+                //     // Mat img2 = Mat::zeros(marker_sub_images[i].size(), CV_16UC4);
+                //     Mat img2 = Mat::zeros(markers_vis.size(), 
+                //                             markers_vis.type());
+                //     resize(img, img, marker_size);
+                //     warpPerspective(img, img2, m.transform.inv(), 
+                //                     img2.size());
+                //     // namedWindow("img2", 1);
+                //     // imshow("img2", img2);
+                //     Mat mask = img2 > 0;
 
-                    // if( img2.x >= 0 && img2.y >= 0 && 
-                    //     img2.width + img2.x < markers_vis.cols && 
-                    //     img2.height + img2.y < markers_vis.rows ) {
-                    // }
-                    // else
-                    //     continue;
+                //     // if( img2.x >= 0 && img2.y >= 0 && 
+                //     //     img2.width + img2.x < markers_vis.cols && 
+                //     //     img2.height + img2.y < markers_vis.rows ) {
+                //     // }
+                //     // else
+                //     //     continue;
 
-                    // img2.copyTo(markers_vis, mask);
+                //     // img2.copyTo(markers_vis, mask);
 
-                    bitwise_or(img2, markers_vis, markers_vis);
-                }
+                //     bitwise_or(img2, markers_vis, markers_vis);
+                // }
+
+                Mat t = Mat::zeros( markers_vis.size(), 
+                                        markers_vis.type());
+                warpPerspective(imgs[2], t, m.transform.inv(), 
+                                     t.size());
+                Mat mask = t == 0;
+                bitwise_and(mask, markers_vis, markers_vis);
+                bitwise_or(t, markers_vis, markers_vis);
+                
             }
         }
 
