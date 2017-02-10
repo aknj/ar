@@ -10,8 +10,8 @@
 using namespace std;
 using namespace cv;
 
-const int WIDTH = 320 * 1.2;
-const int HEIGHT = 240 * 1.2;
+const int WIDTH = 320 * 1.5;
+const int HEIGHT = 240 * 1.5;
 const int FPS = 5;
 
 const int marker_min_contour_length_allowed = 100;
@@ -223,10 +223,12 @@ int main() {
 
     int it = 0;
     Mat frame, grayscale, thresholdImg, markers_prev;
+#ifdef STEPS
     namedWindow("input", 1);
     namedWindow("threshold", 1);
     namedWindow("contours_prev", 1);
     namedWindow("markers_cand", 1);
+#endif
 
     //- reading an image from file
     vector<Mat> imgs;
@@ -245,10 +247,13 @@ int main() {
 
     //- trackbars for changing the parameters of adaptiveThreshold
     int t1 = 111;
+#ifdef STEPS
     createTrackbar("thr_blocksize", "contours_prev", &t1, 121);
-
+#endif
     int t2 = 16;
+#ifdef STEPS
     createTrackbar("thr_c", "contours_prev", &t2, 20);
+#endif
 
 
     for(;;) {
@@ -500,28 +505,28 @@ int main() {
                 
                 ////////////////////////////////////////////////////////////////
                 //- draw good markers' outlines and show their ids
-                char label[15];
-                sprintf(label, "#%lu, id=%d", i, m.id);
-                Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
+                // char label[15];
+                // sprintf(label, "#%lu, id=%d", i, m.id);
+                // Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
 
-                {
-                    draw_polygon(markers_vis, detected_markers[i].points, color);
-                    marker_sub_images.
-                        push_back(
-                            markers_vis(boundingRect(m.points))
-                        );
+                // {
+                //     draw_polygon(markers_vis, detected_markers[i].points, color);
+                //     marker_sub_images.
+                //         push_back(
+                //             markers_vis(boundingRect(m.points))
+                //         );
 
-                    //- drawing numbers
-                    putText(markers_vis, label, m.points[1], 
-                            FONT_HERSHEY_SIMPLEX, .5, color);
+                //     //- drawing numbers
+                //     putText(markers_vis, label, m.points[1], 
+                //             FONT_HERSHEY_SIMPLEX, .5, color);
 
-                    namedWindow("markers", 1);
-                }
+                //     namedWindow("markers", 1);
+                // }
 
-                if(m.id == 300) {
-                    putText(markers_vis, "wow!", m.points[3], 
-                            FONT_HERSHEY_SIMPLEX, .5, color);
-                }
+                // if(m.id == 300) {
+                //     putText(markers_vis, "wow!", m.points[3], 
+                //             FONT_HERSHEY_SIMPLEX, .5, color);
+                // }
 
                 ////////////////////////////////////////////////////////////////
                 //- place images on output frame
@@ -544,10 +549,12 @@ int main() {
         cap.retrieve(frame);
 
 
+#ifdef STEPS
         imshow("input", frame);
         imshow("threshold", thresholdImg);
         imshow("contours_prev", contours_prev);
         imshow("markers_cand", markers_prev);
+#endif
         imshow("markers", markers_vis);
 
     }
