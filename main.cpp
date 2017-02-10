@@ -34,11 +34,7 @@ typedef struct {
     Mat transform;
 } marker_t;
 
-// enum {
-//     106, 107, 108, 270, 300, 415
-// }
-
-static const int marker_ids[] = {106, 107, 108, 270, 300, 415};
+map<int, int> marker_ids;
 
 
 
@@ -207,6 +203,13 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
 
 
 int main() {
+    marker_ids[106] = 1;
+    marker_ids[107] = 2;
+    marker_ids[108] = 3;
+    marker_ids[270] = 4;
+    marker_ids[300] = 5;
+    marker_ids[415] = 6;
+
     VideoCapture cap(0);
 
     if(!cap.isOpened()) {
@@ -229,7 +232,7 @@ int main() {
     //- reading an image from file
     vector<Mat> imgs;
 
-    for(int i = 0; i < 5; i++) {
+    for(int i = 0; i < 6; i++) {
         char path[20]; 
         sprintf(path, "images/%d.jpg", i+1);
         imgs.push_back(imread(path, CV_LOAD_IMAGE_COLOR));
@@ -237,9 +240,9 @@ int main() {
             printf("Could not open or find the image %s", path);
             return -1;
         }
-
         resize(imgs[i], imgs[i], marker_size);
     }
+
     
 
     //- trackbars for changing the parameters of adaptiveThreshold
@@ -549,7 +552,9 @@ int main() {
 
                 Mat t = Mat::zeros( markers_vis.size(), 
                                         markers_vis.type());
-                warpPerspective(imgs[2], t, m.transform.inv(), 
+                
+                // cout << m.id << "   " << marker_ids[m.id] << endl;
+                warpPerspective(imgs[marker_ids[m.id]-1], t, m.transform.inv(), 
                                      t.size());
                 Mat mask = t == 0;
                 bitwise_and(mask, markers_vis, markers_vis);
