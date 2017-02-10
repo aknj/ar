@@ -31,7 +31,10 @@ vector<Point2f> m_marker_corners2d(arr, arr + sizeof(arr) / sizeof(arr[0]));
 typedef struct {
     vector<Point2f> points;
     int id;
+    Mat transform;
 } marker_t;
+
+//enum {}
 
 
 
@@ -431,10 +434,15 @@ int main() {
                 int id = read_marker_id(canonical_marker_image, n_rotations);
                 if(id != -1) {
                     marker.id = id;
+                    marker.transform = marker_transform;
                     //- sort the points of the marker according to its data
                     std::rotate(marker.points.begin(),
                                 marker.points.begin() + 4 - n_rotations,
                                 marker.points.end() );
+
+                    marker.transform = getPerspectiveTransform(
+                        marker.points, m_marker_corners2d
+                    );
 
                     good_markers.push_back(marker);
                 }
@@ -472,21 +480,27 @@ int main() {
 
             detected_markers = good_markers;
         
-    
             ////////////////////////////////////////////////////////////////////
-            //- draw good markers' outlines and show their ids
+            //- operations on good markers
             for(size_t i = 0; i < detected_markers.size(); i++) {
                 marker_t& m = detected_markers[i];
+                vector<Mat> marker_sub_images;
+                
+                ////////////////////////////////////////////////////////////////
+                //- draw good markers' outlines and show their ids
                 char label[15];
                 sprintf(label, "#%lu, id=%d", i, m.id);
                 Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
 
                 {
                     draw_polygon(markers_vis, detected_markers[i].points, color);
-                    //Mat marker_sub_image = marker_image(boundingRect(marker.points));
+                    marker_sub_images.
+                        push_back(
+                            markers_vis(boundingRect(m.points))
+                        );
 
                     //- drawing numbers
-                    putText(markers_vis, label, detected_markers[i].points[1], 
+                    putText(markers_vis, label, m.points[1], 
                             FONT_HERSHEY_SIMPLEX, .5, color);
 
                     namedWindow("markers", 1);
@@ -496,8 +510,32 @@ int main() {
                     putText(markers_vis, "wow!", m.points[3], 
                             FONT_HERSHEY_SIMPLEX, .5, color);
                 }
-            }
 
+                ////////////////////////////////////////////////////////////////
+                //- place images on output frame
+                if(m.id == 300) {
+                    // Mat img2 = Mat::zeros(marker_sub_images[i].size(), CV_16UC4);
+                    Mat img2 = Mat::zeros(markers_vis.size(), 
+                                            markers_vis.type());
+                    resize(img, img, marker_size);
+                    warpPerspective(img, img2, m.transform.inv(), 
+                                    img2.size());
+                    // namedWindow("img2", 1);
+                    // imshow("img2", img2);
+                    Mat mask = img2 > 0;
+
+                    // if( img2.x >= 0 && img2.y >= 0 && 
+                    //     img2.width + img2.x < markers_vis.cols && 
+                    //     img2.height + img2.y < markers_vis.rows ) {
+                    // }
+                    // else
+                    //     continue;
+
+                    // img2.copyTo(markers_vis, mask);
+
+                    bitwise_or(img2, markers_vis, markers_vis);
+                }
+            }
         }
 
 
