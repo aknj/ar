@@ -27,15 +27,20 @@ static const Point2f arr[] = {
 };
 vector<Point2f> m_marker_corners2d(arr, arr + sizeof(arr) / sizeof(arr[0]));
 
-
 typedef struct {
     vector<Point2f> points;
     int id;
     Mat transform;
 } marker_t;
 
-map<int, int> marker_ids;
-
+map<int, int> marker_ids = {
+    {106, 1},
+    {107, 2},
+    {108, 3},
+    {270, 4},
+    {300, 5},
+    {415, 6}
+};
 
 
 float perimeter(vector<Point2f> &a) {
@@ -203,12 +208,6 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
 
 
 int main() {
-    marker_ids[106] = 1;
-    marker_ids[107] = 2;
-    marker_ids[108] = 3;
-    marker_ids[270] = 4;
-    marker_ids[300] = 5;
-    marker_ids[415] = 6;
 
     VideoCapture cap(0);
 
@@ -243,7 +242,6 @@ int main() {
         resize(imgs[i], imgs[i], marker_size);
     }
 
-    
 
     //- trackbars for changing the parameters of adaptiveThreshold
     int t1 = 111;
@@ -302,10 +300,10 @@ int main() {
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
 
         //- find candidates -------
-        vector<marker_t> detected_markers;
+        vector<marker_t> possible_markers,
+                         detected_markers,
+                         good_markers;
         vector<Point> approx_curve;
-        vector<marker_t> possible_markers;
-        vector<marker_t> good_markers;
 
         //-- for each contour, analyze if it is a parallelepiped likely to be 
         //---the marker
@@ -433,7 +431,6 @@ int main() {
                 warpPerspective(grayscale, canonical_marker_image, 
                                 marker_transform, marker_size);
 
-//# debug
                 // {
                 //     draw_polygon(marker_image, marker.points, 
                 //                  Scalar(255, 0, 0));
@@ -442,7 +439,6 @@ int main() {
 
                 //     namedWindow("markers", 1);
                 // }
-//# enddebug
 
                 int n_rotations;
                 int id = read_marker_id(canonical_marker_image, n_rotations);
@@ -478,10 +474,12 @@ int main() {
             }
 
             TermCriteria term_criteria = TermCriteria(   
-                TermCriteria::MAX_ITER | TermCriteria::EPS, 30, .01);
-            cornerSubPix(   grayscale, precise_corners, 
-                            Size(5,5), Size(-1,-1), 
-                            term_criteria);
+                TermCriteria::MAX_ITER | TermCriteria::EPS, 30, .01
+            );
+            cornerSubPix(   
+                grayscale, precise_corners, Size(5,5), Size(-1,-1), 
+                term_criteria
+            );
 
             //-copy refined corners positions back to markers
             for(size_t i = 0; i < good_markers.size(); i++) {
@@ -527,39 +525,15 @@ int main() {
 
                 ////////////////////////////////////////////////////////////////
                 //- place images on output frame
-                // if(m.id == 300) {
-                //     // Mat img2 = Mat::zeros(marker_sub_images[i].size(), CV_16UC4);
-                //     Mat img2 = Mat::zeros(markers_vis.size(), 
-                //                             markers_vis.type());
-                //     resize(img, img, marker_size);
-                //     warpPerspective(img, img2, m.transform.inv(), 
-                //                     img2.size());
-                //     // namedWindow("img2", 1);
-                //     // imshow("img2", img2);
-                //     Mat mask = img2 > 0;
-
-                //     // if( img2.x >= 0 && img2.y >= 0 && 
-                //     //     img2.width + img2.x < markers_vis.cols && 
-                //     //     img2.height + img2.y < markers_vis.rows ) {
-                //     // }
-                //     // else
-                //     //     continue;
-
-                //     // img2.copyTo(markers_vis, mask);
-
-                //     bitwise_or(img2, markers_vis, markers_vis);
-                // }
-
-                Mat t = Mat::zeros( markers_vis.size(), 
-                                        markers_vis.type());
+                Mat t = Mat::zeros(markers_vis.size(), markers_vis.type());
                 
                 // cout << m.id << "   " << marker_ids[m.id] << endl;
                 warpPerspective(imgs[marker_ids[m.id]-1], t, m.transform.inv(), 
-                                     t.size());
+                                t.size());
+
                 Mat mask = t == 0;
                 bitwise_and(mask, markers_vis, markers_vis);
                 bitwise_or(t, markers_vis, markers_vis);
-                
             }
         }
 
