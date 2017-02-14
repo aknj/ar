@@ -10,8 +10,14 @@
 using namespace std;
 using namespace cv;
 
-const int WIDTH = 320 * 1.5;
-const int HEIGHT = 240 * 1.5;
+// 320, 240
+#ifdef STEPS
+const int WIDTH = 320;
+const int HEIGHT = 240;
+#else
+const int WIDTH = 320 * 2;
+const int HEIGHT = 240 * 2;
+#endif
 const int FPS = 5;
 
 const int marker_min_contour_length_allowed = 100;
@@ -60,7 +66,7 @@ float perimeter(vector<Point2f> &a) {
 }
 
 /**
- * function draws polygons with a random color of line
+ * draw polygons with a random color of line
  */
 void draw_polygon(Mat mat_name, vector<Point2f> &poly, 
                   Scalar color = Scalar(rand()%255, rand()%255, rand()%255)) 
@@ -98,21 +104,17 @@ int marker_hamm_dist(Mat bits) {
     
     for (int y = 0; y < 5; y++) {
         int min_sum = 1e5; 
-        
         for(int p = 0; p < 4; p++) {
             int sum = 0;
             // counting
             for(int x = 0; x < 5; x++) {
                 sum += bits.at<uchar>(y, x) == words[p][x] ? 0 : 1;
             }
-        
             if(min_sum > sum)
                 min_sum = sum;
         }
-        
         dist += min_sum;
     }
-    
     return dist;
 }
 
@@ -124,10 +126,7 @@ int matrix_to_id(const Mat &bits) {
         val <<= 1;
         if(bits.at<uchar>(y,4)) val|=1;
     }
-    if(val == 0) 
-        return -1;
-    else
-        return val;
+    return val ? val : -1;
 }
 
 int read_marker_id(Mat &marker_image, int &n_rotations) {
@@ -229,6 +228,7 @@ int main() {
     namedWindow("contours_prev", 1);
     namedWindow("markers_cand", 1);
 #endif
+    namedWindow("output", 1);
 
     //- reading an image from file
     vector<Mat> imgs;
@@ -262,7 +262,7 @@ int main() {
 
         //- dismiss some frames
         it++;
-        if(it % 30 != 0)
+        if(it % 10 != 0)
             continue;
 
         if(!cap.retrieve(frame) || frame.empty())
@@ -338,7 +338,7 @@ int main() {
             if(min_dist < marker_min_contour_length_allowed)
                 continue;
 
-            //- all? tests are passed. save marker candidate
+            //- all tests are passed. save marker candidate
             marker_t m;
 
             for(int i = 0; i < 4; i++) 
@@ -419,7 +419,7 @@ int main() {
         //-- verify/recognize markers
         {
             
-            Mat canonical_marker_image;
+            Mat canonical_marker_image = Mat(marker_size, grayscale.type());
             
             //- identify the markers
             for(size_t i=0; i < detected_markers.size(); i++) {
@@ -436,14 +436,6 @@ int main() {
                 warpPerspective(grayscale, canonical_marker_image, 
                                 marker_transform, marker_size);
 
-                // {
-                //     draw_polygon(marker_image, marker.points, 
-                //                  Scalar(255, 0, 0));
-                //     Mat marker_sub_image = 
-                //                  marker_image(boundingRect(marker.points));
-
-                //     namedWindow("markers", 1);
-                // }
 
                 int n_rotations;
                 int id = read_marker_id(canonical_marker_image, n_rotations);
@@ -501,7 +493,6 @@ int main() {
             //- operations on good markers
             for(size_t i = 0; i < detected_markers.size(); i++) {
                 marker_t& m = detected_markers[i];
-                vector<Mat> marker_sub_images;
                 
                 ////////////////////////////////////////////////////////////////
                 //- draw good markers' outlines and show their ids
@@ -511,10 +502,6 @@ int main() {
 
                 // {
                 //     draw_polygon(markers_vis, detected_markers[i].points, color);
-                //     marker_sub_images.
-                //         push_back(
-                //             markers_vis(boundingRect(m.points))
-                //         );
 
                 //     //- drawing numbers
                 //     putText(markers_vis, label, m.points[1], 
@@ -555,7 +542,7 @@ int main() {
         imshow("contours_prev", contours_prev);
         imshow("markers_cand", markers_prev);
 #endif
-        imshow("markers", markers_vis);
+        imshow("output", markers_vis);
 
     }
 
