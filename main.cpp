@@ -221,7 +221,7 @@ int main() {
     cap.set(CV_CAP_PROP_FPS, FPS);
 
     int it = 0;
-    Mat frame, grayscale, thresholdImg, markers_prev;
+    Mat frame, grayscale, thresholdImg, markers_prev, markers_vis, marker_image;
 #ifdef STEPS
     namedWindow("input", 1);
     namedWindow("threshold", 1);
@@ -269,11 +269,11 @@ int main() {
             continue;
 
         //- copy frame to marker visualization Mat
-        Mat markers_vis = frame.clone();
+        markers_vis = frame.clone();
 
         //- manipulate frame
         cvtColor(frame, grayscale, CV_BGRA2GRAY);
-        Mat marker_image = grayscale.clone();
+        marker_image = grayscale.clone();
 
         
         int thr_blocksize = t1 / 2 * 2 + 3;
@@ -533,7 +533,7 @@ int main() {
         if(waitKey(255) == 27)
             break;
 
-        cap.retrieve(frame);
+        // cap.retrieve(frame);
 
 
 #ifdef STEPS
