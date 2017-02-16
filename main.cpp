@@ -18,7 +18,7 @@ const int HEIGHT = 240;
 const int WIDTH = 320 * 2;
 const int HEIGHT = 240 * 2;
 #endif
-const int FPS = 5;
+const int FPS = 10;
 
 const int marker_min_contour_length_allowed = 100;
 
@@ -494,32 +494,24 @@ int main() {
             for(size_t i = 0; i < detected_markers.size(); i++) {
                 marker_t& m = detected_markers[i];
                 
-                ////////////////////////////////////////////////////////////////
-                //- draw good markers' outlines and show their ids
-                // char label[15];
-                // sprintf(label, "#%lu, id=%d", i, m.id);
-                // Scalar color = Scalar(rand()%255,rand()%255,rand()%255);
-
-                // {
-                //     draw_polygon(markers_vis, detected_markers[i].points, color);
-
-                //     //- drawing numbers
-                //     putText(markers_vis, label, m.points[1], 
-                //             FONT_HERSHEY_SIMPLEX, .5, color);
-
-                //     namedWindow("markers", 1);
-                // }
-
-                // if(m.id == 300) {
-                //     putText(markers_vis, "wow!", m.points[3], 
-                //             FONT_HERSHEY_SIMPLEX, .5, color);
-                // }
+                if(marker_ids.find(m.id) == marker_ids.end()) {
+                    cout << "marker id: " << m.id << " -> " <<
+                        marker_ids[m.id] << endl << endl;
+                    continue;
+                }
 
                 ////////////////////////////////////////////////////////////////
                 //- place images on output frame
                 Mat t = Mat::zeros(markers_vis.size(), markers_vis.type());
                 
                 // cout << m.id << "   " << marker_ids[m.id] << endl;
+
+                // cout << "marker id: " << m.id << " -> " <<
+                //         marker_ids[m.id] << endl << endl;
+                // cout << m.transform << endl << endl;
+                // cout << "inv:" << endl << m.transform.inv() << endl << endl <<
+                //         endl;
+
                 warpPerspective(imgs[marker_ids[m.id]-1], t, m.transform.inv(), 
                                 t.size());
 
@@ -532,8 +524,7 @@ int main() {
 
         if(waitKey(255) == 27)
             break;
-
-        // cap.retrieve(frame);
+            
 
 
 #ifdef STEPS

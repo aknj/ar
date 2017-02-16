@@ -36,4 +36,4 @@ enable_cxx_compiler_flag_if_supported("-std=c++11")
 enable_cxx_compiler_flag_if_supported("-g")
 enable_cxx_compiler_flag_if_supported("-Wformat=0")
 
-# enable_cxx_compiler_flag_if_supported("-DSTEPS")
+enable_cxx_compiler_flag_if_supported("-DSTEPS")
