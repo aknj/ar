@@ -10,36 +10,35 @@
 using namespace std;
 using namespace cv;
 
-// 320, 240
+/******************************************************************************
+    consts
+*/
+
 #ifdef STEPS
-const int WIDTH = 320;
-const int HEIGHT = 240;
+const int   WIDTH = 320;
+const int   HEIGHT = 240;
 #else
-const int WIDTH = 320 * 2;
-const int HEIGHT = 240 * 2;
+const int   WIDTH = 320 * 2;
+const int   HEIGHT = 240 * 2;
 #endif
-const int FPS = 10;
+const int   FPS = 10;
 
-const int marker_min_contour_length_allowed = 100;
+const int   MIN_M_CONTOUR_LENGTH_ALLOWED = 100;
 
-const Size marker_size = Size(100,100);
-
-//- marker corners for perspective transformation
-static const Point2f arr[] = {
-    Point2f(0,0),
-    Point2f(marker_size.width-1,0),
-    Point2f(marker_size.width-1,marker_size.height-1),
-    Point2f(0,marker_size.height-1)
+//- size and corners of the canonical marker
+const Size  marker_size = Size(100,100);
+static
+const Point2f   
+            arr[] = { Point2f(0,0),
+                      Point2f(marker_size.width-1,0),
+                      Point2f(marker_size.width-1,marker_size.height-1),
+                      Point2f(0,marker_size.height-1)
 };
-vector<Point2f> m_marker_corners2d(arr, arr + sizeof(arr) / sizeof(arr[0]));
+const vector<Point2f> 
+            m_marker_corners_2d(arr, arr + sizeof(arr) / sizeof(arr[0]));
 
-typedef struct {
-    vector<Point2f> points;
-    int id;
-    Mat transform;
-} marker_t;
-
-map<int, int> marker_ids = {
+map<int, int> 
+            marker_ids = {
     {106, 1},
     {107, 2},
     {108, 3},
@@ -48,6 +47,21 @@ map<int, int> marker_ids = {
     {415, 6}
 };
 
+
+/******************************************************************************
+    type definitions 
+*/
+
+typedef struct {
+    vector<Point2f> points;
+    int id;
+    Mat transform;
+} marker_t;
+
+
+/******************************************************************************
+    functions 
+*/
 
 float perimeter(vector<Point2f> &a) {
     float dx, dy;
@@ -91,8 +105,8 @@ Mat bit_matrix_rotate(Mat in) {
     return out;
 }
 
-int marker_hamm_dist(Mat bits) {
-    //- parity check matrix
+int marker_hamm_dist(const Mat &bits) {
+    //- all possible correct coded words
     bool words[4][5] = {
         {1, 0, 0, 0, 0},            // the first parity check bit is inverted
         {1, 1, 1, 1, 1},
@@ -335,7 +349,7 @@ int main() {
             }
 
             //- check that distance is not very small
-            if(min_dist < marker_min_contour_length_allowed)
+            if(min_dist < MIN_M_CONTOUR_LENGTH_ALLOWED)
                 continue;
 
             //- all tests are passed. save marker candidate
@@ -393,9 +407,11 @@ int main() {
 
         for(size_t i = 0; i < too_near_candidates.size(); i++) {
             float p1 = perimeter(
-                possible_markers[ too_near_candidates[i].first  ].points);
+                possible_markers[ too_near_candidates[i].first  ].points
+            );
             float p2 = perimeter(
-                possible_markers[ too_near_candidates[i].second ].points);
+                possible_markers[ too_near_candidates[i].second ].points
+            );
 
             size_t removal_index;
             if(p1 > p2)
@@ -423,18 +439,18 @@ int main() {
             
             //- identify the markers
             for(size_t i=0; i < detected_markers.size(); i++) {
-                marker_t marker;
-                marker = detected_markers[i];
+                marker_t& marker = detected_markers[i];
 
                 //- find the perspective transformation that brings current
                 //--marker to rectangular form
                 Mat marker_transform = getPerspectiveTransform(
-                                            marker.points, m_marker_corners2d
+                                            marker.points, m_marker_corners_2d
                 );
 
                 //- transform image to get a canonical marker image
                 warpPerspective(grayscale, canonical_marker_image, 
-                                marker_transform, marker_size);
+                                marker_transform, marker_size
+                );
 
 
                 int n_rotations;
@@ -445,10 +461,11 @@ int main() {
                     //- sort the points of the marker according to its data
                     std::rotate(marker.points.begin(),
                                 marker.points.begin() + 4 - n_rotations,
-                                marker.points.end() );
+                                marker.points.end() 
+                    );
 
                     marker.transform = getPerspectiveTransform(
-                        marker.points, m_marker_corners2d
+                        marker.points, m_marker_corners_2d
                     );
 
                     good_markers.push_back(marker);
