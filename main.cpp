@@ -21,30 +21,29 @@ const int   HEIGHT = 240;
 const int   WIDTH = 320 * 2;
 const int   HEIGHT = 240 * 2;
 #endif
-const int   FPS = 10;
+const int   FPS = 60;
 
 const int   MIN_M_CONTOUR_LENGTH_ALLOWED = 100;
 
 //- size and corners of the canonical marker
-const Size  marker_size = Size(100,100);
+const Size  MARKER_SIZE = Size(100,100);
 static
-const Point2f   
-            arr[] = { Point2f(0,0),
-                      Point2f(marker_size.width-1,0),
-                      Point2f(marker_size.width-1,marker_size.height-1),
-                      Point2f(0,marker_size.height-1)
+const Point2f
+            PTS[] = {   Point2f(0,0),
+                        Point2f(MARKER_SIZE.width-1,0),
+                        Point2f(MARKER_SIZE.width-1,MARKER_SIZE.height-1),
+                        Point2f(0,MARKER_SIZE.height-1)
 };
-const vector<Point2f> 
-            m_marker_corners_2d(arr, arr + sizeof(arr) / sizeof(arr[0]));
+const vector<Point2f>
+            CANONICAL_M_CORNERS( PTS, PTS + sizeof(PTS)/sizeof(PTS[0]) );
 
-map<int, int> 
-            marker_ids = {
-    {106, 1},
-    {107, 2},
-    {108, 3},
-    {270, 4},
-    {300, 5},
-    {415, 6}
+const map<int, int>
+            marker_ids = {  {106, 1},
+                            {107, 2},
+                            {108, 3},
+                            {270, 4},
+                            {300, 5},
+                            {415, 6}
 };
 
 
@@ -83,7 +82,7 @@ float perimeter(vector<Point2f> &a) {
  * draw polygons with a random color of line
  */
 void draw_polygon(Mat mat_name, vector<Point2f> &poly, 
-                  Scalar color = Scalar(rand()%255, rand()%255, rand()%255)) 
+                  Scalar color = Scalar(rand()%255, rand()%255, rand()%255))
 {
     for(size_t i = 0; i < poly.size(); i++) {
         size_t i2 = (i+1) % poly.size();
@@ -117,7 +116,7 @@ int marker_hamm_dist(const Mat &bits) {
     int dist = 0;
     
     for (int y = 0; y < 5; y++) {
-        int min_sum = 1e5; 
+        int min_sum = 1e5;
         for(int p = 0; p < 4; p++) {
             int sum = 0;
             // counting
@@ -136,9 +135,9 @@ int matrix_to_id(const Mat &bits) {
     int val = 0;
     for(int y = 0; y < 5; y++) {
         val <<= 1;
-        if(bits.at<uchar>(y,2)) val|=1;
+        if(bits.at<uchar>(y, 2)) val|=1;
         val <<= 1;
-        if(bits.at<uchar>(y,4)) val|=1;
+        if(bits.at<uchar>(y, 4)) val|=1;
     }
     return val ? val : -1;
 }
@@ -151,19 +150,18 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
 
     //- threshold image
     threshold(grey, grey, 125, 255, THRESH_BINARY | THRESH_OTSU);
-    // namedWindow("binary marker", 1);
 
     //- markers are divided in 7x7, of which the inner 5x5 belongs to marker
     //--info. the external border should be entirely black
 
     int cell_size = marker_image.rows / 7;
 
-    for(int y=0; y < 7; y++) {
+    for(int y = 0; y < 7; y++) {
         int inc = 6;
 
         if(y==0 || y==6) inc = 1; // for 1st and last row, check whole border
 
-        for(int x=0; x < 7; x+=inc) {
+        for(int x = 0; x < 7; x+=inc) {
             int cellX = x * cell_size;
             int cellY = y * cell_size;
             Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
@@ -172,15 +170,15 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
 
             if(n_z > (cell_size * cell_size) / 2) {
                 return -1; // cannot be a marker bc the border elem is not black
-            } 
+            }
         }
     }
 
     Mat bit_matrix = Mat::zeros(5, 5, CV_8UC1);
 
     //- get info (for each inner square, determiine if it is black or white)
-    for(int y=0; y < 5; y++) {
-        for(int x=0; x < 5; x++) {
+    for(int y = 0; y < 5; y++) {
+        for(int x = 0; x < 5; x++) {
             int cellX = (x+1) * cell_size;
             int cellY = (y+1) * cell_size;
             Mat cell = grey(Rect(cellX, cellY, cell_size, cell_size));
@@ -235,27 +233,23 @@ int main() {
     cap.set(CV_CAP_PROP_FPS, FPS);
 
     int it = 0;
-    Mat frame, grayscale, thresholdImg, markers_prev, markers_vis, marker_image;
-#ifdef STEPS
-    namedWindow("input", 1);
-    namedWindow("threshold", 1);
-    namedWindow("contours_prev", 1);
-    namedWindow("markers_cand", 1);
-#endif
+    Mat frame, grayscale, threshold_img, markers_vis,
+        markers_prev, contours_prev;
+
     namedWindow("output", 1);
 
-    //- reading an image from file
+    //- reading images from files
     vector<Mat> imgs;
 
     for(int i = 0; i < 6; i++) {
-        char path[20]; 
-        sprintf(path, "images/%d.jpg", i+1);
+        char path[20];
+        sprintf(path, "../images/%d.jpg", i+1);
         imgs.push_back(imread(path, CV_LOAD_IMAGE_COLOR));
         if(!imgs[i].data) {
             printf("Could not open or find the image %s", path);
             return -1;
         }
-        resize(imgs[i], imgs[i], marker_size);
+        resize(imgs[i], imgs[i], MARKER_SIZE);
     }
 
 
@@ -284,17 +278,18 @@ int main() {
 
         //- copy frame to marker visualization Mat
         markers_vis = frame.clone();
+        markers_prev = frame.clone();
+        contours_prev = frame.clone();
 
         //- manipulate frame
         cvtColor(frame, grayscale, CV_BGRA2GRAY);
-        marker_image = grayscale.clone();
 
         
         int thr_blocksize = t1 / 2 * 2 + 3;
         int thr_c = t2 - 10;
 
-        adaptiveThreshold(grayscale, thresholdImg, 255, 
-                          CV_ADAPTIVE_THRESH_GAUSSIAN_C, 
+        adaptiveThreshold(grayscale, threshold_img, 255,
+                          CV_ADAPTIVE_THRESH_GAUSSIAN_C,
                           CV_THRESH_BINARY_INV, thr_blocksize, thr_c);
         
 
@@ -302,8 +297,8 @@ int main() {
         vector<vector<Point> > contours;
 
         Mat contours_img;
-        thresholdImg.copyTo(contours_img);
-        findContours(contours_img, all_contours, CV_RETR_LIST, 
+        threshold_img.copyTo(contours_img);
+        findContours(contours_img, all_contours, CV_RETR_LIST,
                      CV_CHAIN_APPROX_NONE);
 
         for(size_t i = 0; i < all_contours.size(); i++) {
@@ -313,10 +308,12 @@ int main() {
             }
         }
 
-        Mat contours_prev = Mat::zeros(frame.size(), CV_8UC3);
-        Mat markers_prev = Mat::zeros(frame.size(), CV_8UC3);
+#ifdef STEPS
+        contours_prev = Mat::zeros(frame.size(), CV_8UC3);
+        markers_prev = Mat::zeros(frame.size(), CV_8UC3);
 
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
+#endif
 
         //- find candidates -------
         vector<marker_t> possible_markers,
@@ -355,7 +352,7 @@ int main() {
             //- all tests are passed. save marker candidate
             marker_t m;
 
-            for(int i = 0; i < 4; i++) 
+            for(int i = 0; i < 4; i++)
                 m.points.push_back(Point2f(approx_curve[i].x, approx_curve[i].y));
 
             //- sort the points in anti-clockwise order
@@ -367,13 +364,11 @@ int main() {
 
             double o = (v1.x * v2.y) - (v1.y * v2.x);
 
-            if(o < 0.0)               //- if the 3rd point is on the left side,  
-                swap(m.points[1], m.points[3]);        //--sort anti-clockwise 
+            if(o < 0.0)               //- if the 3rd point is on the left side,
+                swap(m.points[1], m.points[3]);        //--sort anti-clockwise
 
 
             possible_markers.push_back(m);
-
-            // draw_polygon(markers_prev, m);
         }
 
         //-- remove these elements which corners are too close to each other
@@ -397,7 +392,7 @@ int main() {
                 dist_squared /= 4;
 
                 if(dist_squared < 100) {
-                    too_near_candidates.push_back(pair<int,int>(i,j));
+                    too_near_candidates.push_back(pair<int,int>(i, j));
                 }
             }
         }
@@ -427,7 +422,9 @@ int main() {
         for(size_t i = 0; i < possible_markers.size(); i++) {
             if(!removal_mask[i]) {
                 detected_markers.push_back(possible_markers[i]);
+#ifdef STEPS
                 draw_polygon(markers_prev, possible_markers[i].points);
+#endif
             }
         }
 
@@ -435,7 +432,7 @@ int main() {
         //-- verify/recognize markers
         {
             
-            Mat canonical_marker_image = Mat(marker_size, grayscale.type());
+            Mat canonical_marker_image = Mat(MARKER_SIZE, grayscale.type());
             
             //- identify the markers
             for(size_t i=0; i < detected_markers.size(); i++) {
@@ -444,12 +441,12 @@ int main() {
                 //- find the perspective transformation that brings current
                 //--marker to rectangular form
                 Mat marker_transform = getPerspectiveTransform(
-                                            marker.points, m_marker_corners_2d
+                                            marker.points, CANONICAL_M_CORNERS
                 );
 
                 //- transform image to get a canonical marker image
-                warpPerspective(grayscale, canonical_marker_image, 
-                                marker_transform, marker_size
+                warpPerspective(grayscale, canonical_marker_image,
+                                marker_transform, MARKER_SIZE
                 );
 
 
@@ -465,7 +462,7 @@ int main() {
                     );
 
                     marker.transform = getPerspectiveTransform(
-                        marker.points, m_marker_corners_2d
+                        marker.points, CANONICAL_M_CORNERS
                     );
 
                     good_markers.push_back(marker);
@@ -487,11 +484,11 @@ int main() {
                 }
             }
 
-            TermCriteria term_criteria = TermCriteria(   
+            TermCriteria term_criteria = TermCriteria(
                 TermCriteria::MAX_ITER | TermCriteria::EPS, 30, .01
             );
-            cornerSubPix(   
-                grayscale, precise_corners, Size(5,5), Size(-1,-1), 
+            cornerSubPix(
+                grayscale, precise_corners, Size(5,5), Size(-1,-1),
                 term_criteria
             );
 
@@ -512,25 +509,19 @@ int main() {
                 marker_t& m = detected_markers[i];
                 
                 if(marker_ids.find(m.id) == marker_ids.end()) {
-                    cout << "marker id: " << m.id << " -> " <<
-                        marker_ids[m.id] << endl << endl;
+                    cout << "false marker id: " << m.id << endl << endl;
                     continue;
                 }
 
                 ////////////////////////////////////////////////////////////////
                 //- place images on output frame
                 Mat t = Mat::zeros(markers_vis.size(), markers_vis.type());
-                
-                // cout << m.id << "   " << marker_ids[m.id] << endl;
 
-                // cout << "marker id: " << m.id << " -> " <<
-                //         marker_ids[m.id] << endl << endl;
-                // cout << m.transform << endl << endl;
-                // cout << "inv:" << endl << m.transform.inv() << endl << endl <<
-                //         endl;
-
-                warpPerspective(imgs[marker_ids[m.id]-1], t, m.transform.inv(), 
-                                t.size());
+                warpPerspective(    imgs[marker_ids.at(m.id)-1],
+                                    t,
+                                    m.transform.inv(),
+                                    t.size()
+                               );
 
                 Mat mask = t == 0;
                 bitwise_and(mask, markers_vis, markers_vis);
@@ -539,14 +530,14 @@ int main() {
         }
 
 
-        if(waitKey(255) == 27)
+        if(waitKey(155) == 27)
             break;
             
 
 
 #ifdef STEPS
         imshow("input", frame);
-        imshow("threshold", thresholdImg);
+        imshow("threshold", threshold_img);
         imshow("contours_prev", contours_prev);
         imshow("markers_cand", markers_prev);
 #endif
