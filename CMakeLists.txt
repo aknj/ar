@@ -1,33 +1,58 @@
 cmake_minimum_required(VERSION 2.8)
-
-project( "OpenCV" )
-find_package( OpenCV REQUIRED )
-
-ADD_EXECUTABLE( main main.cpp )
-
-INCLUDE_DIRECTORIES( 
-    c:/OpenCV/opencv-2.4.13/build/include 
-    c:/mingw64/mingw64/x86_64-w64-mingw32/include
-    c:/mingw64/mingw64/x86_64-w64-mingw32/include/sys )
-LINK_DIRECTORIES( c:/OpenCV/opencv-2.4.13/release/lib )
+project("ar")
 
 
-TARGET_LINK_LIBRARIES( main opencv_core opencv_imgproc opencv_highgui )
+## file globbing ##############################################################
 
+# these instructions search the directory tree when cmake is
+# invoked and put all files that match the pattern in the variables 
+# `sources` and `data`
+file(GLOB_RECURSE   sources   src/*.cpp src/*.hpp)
+# file(GLOB_RECURSE sources_test src/test/*.cpp)
+# file(GLOB_RECURSE data resources/*)
+# you can use set(sources src/main.cpp) etc if you don't want to
+# use globing to find files automatically
+
+add_executable(main ${sources})
+
+
+## dependencies ###############################################################
+
+# this defines the variables Boost_LIBRARIES that contain all library names
+# that we need to link to
+find_package(OpenCV REQUIRED)
+
+target_link_libraries(main PUBLIC
+  ${OpenCV_LIBRARIES}
+ # opencv_core
+ # opencv_imgproc 
+ # opencv_highgui
+)
+
+include_directories(
+  c:/OpenCV/opencv-2.4.13/build/include 
+  c:/mingw64/mingw64/x86_64-w64-mingw32/include
+  c:/mingw64/mingw64/x86_64-w64-mingw32/include/sys
+)
+
+link_directories(c:/OpenCV/opencv-2.4.13/release/lib)
+
+
+## set compile flags safely ###################################################
 
 include(CheckCXXCompilerFlag)
 
 function(enable_cxx_compiler_flag_if_supported flag)
-    string(FIND "${CMAKE_CXX_FLAGS}" "${flag}" flag_already_set)
-    if(flag_already_set EQUAL -1)
-        check_cxx_compiler_flag("${flag}" flag_supported)
-        if(flag_supported)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}" PARENT_SCOPE)
-        endif()
+  string(FIND "${CMAKE_CXX_FLAGS}" "${flag}" flag_already_set)
+  if(flag_already_set EQUAL -1)
+    check_cxx_compiler_flag("${flag}" flag_supported)
+    if(flag_supported)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}" PARENT_SCOPE)
     endif()
+  endif()
 endfunction()
 
-# example usage
+# here use the function ^
 enable_cxx_compiler_flag_if_supported("-Wall")
 enable_cxx_compiler_flag_if_supported("-Wextra")
 enable_cxx_compiler_flag_if_supported("-pedantic")
@@ -36,4 +61,4 @@ enable_cxx_compiler_flag_if_supported("-std=c++11")
 enable_cxx_compiler_flag_if_supported("-g")
 enable_cxx_compiler_flag_if_supported("-Wformat=0")
 
-#enable_cxx_compiler_flag_if_supported("-DSTEPS")
+# enable_cxx_compiler_flag_if_supported("-DSTEPS")

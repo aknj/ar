@@ -7,6 +7,8 @@
 #include <algorithm>    // for copy
 #include <iterator>     // for ostream_iterator
 
+#include "helpers.hpp"
+
 using namespace std;
 using namespace cv;
 
@@ -62,47 +64,9 @@ typedef struct {
     functions 
 */
 
-float perimeter(vector<Point2f> &a) {
-    float dx, dy;
-    float sum = 0;
-    
-    for(size_t i = 0; i < a.size(); i++) {
-        size_t i2 = (i+1) % a.size();
-    
-        dx = a[i].x - a[i2].x;
-        dy = a[i].y - a[i2].y;
-    
-        sum += sqrt(dx*dx + dy*dy);
-    }
-  
-    return sum;
-}
 
-/**
- * draw polygons with a random color of line
- */
-void draw_polygon(Mat mat_name, vector<Point2f> &poly, 
-                  Scalar color = Scalar(rand()%255, rand()%255, rand()%255))
-{
-    for(size_t i = 0; i < poly.size(); i++) {
-        size_t i2 = (i+1) % poly.size();
 
-        line(mat_name, poly[i], poly[i2], color);
-    }
-}
 
-Mat bit_matrix_rotate(Mat in) {
-    Mat out;
-    in.copyTo(out);
-    for(int i = 0; i < in.rows; i++) {
-        for(int j = 0; j < in.cols; j++) {
-            out.at<uchar>(i, j) = in.at<uchar>(in.cols-1-j, i);
-        }
-    }
-    // cout << "in = " << endl << in << endl;
-    // cout << "out = " << endl << out << endl;
-    return out;
-}
 
 int marker_hamm_dist(const Mat &bits) {
     //- all possible correct coded words
@@ -526,6 +490,8 @@ int main() {
                 Mat mask = t == 0;
                 bitwise_and(mask, markers_vis, markers_vis);
                 bitwise_or(t, markers_vis, markers_vis);
+
+                draw_polygon(markers_vis, m.points);
             }
         }
 
