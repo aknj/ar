@@ -4,10 +4,10 @@ project("ar")
 
 ## file globbing ##############################################################
 
-# these instructions search the directory tree when cmake is
-# invoked and put all files that match the pattern in the variables 
-# `sources` and `data`
-file(GLOB_RECURSE   sources   src/*.cpp src/*.hpp)
+# these instructions search the directory tree when cmake is invoked 
+# and put all files that match the pattern in the variables 
+# 'sources', 'sources_test', etc.
+file(GLOB   sources   src/*.cpp src/*.hpp)
 # file(GLOB_RECURSE sources_test src/test/*.cpp)
 # file(GLOB_RECURSE data resources/*)
 # you can use set(sources src/main.cpp) etc if you don't want to
@@ -18,24 +18,21 @@ add_executable(main ${sources})
 
 ## dependencies ###############################################################
 
-# this defines the variables Boost_LIBRARIES that contain all library names
+# this defines the variables OpenCV_LIBRARIES that contain all library names
 # that we need to link to
 find_package(OpenCV REQUIRED)
 
-target_link_libraries(main PUBLIC
-  ${OpenCV_LIBRARIES}
- # opencv_core
- # opencv_imgproc 
- # opencv_highgui
+target_link_libraries(main
+  ${OpenCV_LIBS}
 )
 
 include_directories(
-  c:/OpenCV/opencv-2.4.13/build/include 
-  c:/mingw64/mingw64/x86_64-w64-mingw32/include
-  c:/mingw64/mingw64/x86_64-w64-mingw32/include/sys
+  ${OpenCV_INCLUDES}
+  # c:/mingw64/mingw64/x86_64-w64-mingw32/include
+  # c:/mingw64/mingw64/x86_64-w64-mingw32/include/sys
 )
 
-link_directories(c:/OpenCV/opencv-2.4.13/release/lib)
+# link_directories(c:/OpenCV/opencv-2.4.13/release/lib)
 
 
 ## set compile flags safely ###################################################
