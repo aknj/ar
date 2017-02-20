@@ -85,7 +85,7 @@ int marker_hamm_dist(const Mat &bits) {
     // }
 
     unsigned char H_data[3][5] = {
-        {0, 0, 1, 0, 1},            // the first parity check bit is inverted
+        {1, 0, 1, 0, 1},            // the first parity check bit is inverted
         {0, 1, 1, 0, 0},
         {0, 0, 0, 1, 1}
     };
@@ -94,25 +94,41 @@ int marker_hamm_dist(const Mat &bits) {
     // unsigned char z[3];
 
     // vector<uchar> z;
-    int error = 7;
-    for(int j = 0; j < 5; j++) {
+    // if(dist == 0) {
+    Mat bits_c = bits.clone();
+    for(int i = 0; i < bits_c.rows; i++) {
+        bits_c.at<uchar>(i, 0) = bits_c.at<uchar>(i, 0) == 0 ? 1 : 0;
+    }
+
+    cout << bits << endl;
+    cout << bits_c << endl;
+
+    int error = 0;
+    for(int j = 0; j < 5 && error == 0; j++) {
         vector<int> z;
         for(int i = 0; i < 3; i++) {
             vector<uchar> vec;
-            bitwise_and(H.row(i), bits.row(j), vec);
+            bitwise_and(H.row(i), bits_c.row(j), vec);
             error = countNonZero(vec) % 2;  // if 0 then no error yet
             z.push_back(error);
+            if(error == 1)
+                return 1;
         }
-        cout << z[0] << " " << z[1] << " " << z[2] << endl;
+        // if(countNonZero(z) > 0)
+        //     return 1;
+        // cout << z[0] << z[1] << z[2] << endl;
     }
+        // cout << endl;
+    // }
+    return 0;
 
     //return countNonZero()
 
     // vector<uchar> z;
     // bitwise_and(H, bits.row(0), z);
-    // cout << z[0] << z[1] << z[3] << endl;
+    // cout << z[0] << z[1] << z[2] << endl;
 
-    return dist;
+    // return dist;
 }
 
 
