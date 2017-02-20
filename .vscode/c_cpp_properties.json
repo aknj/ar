@@ -6,7 +6,7 @@
                 "%OPENCV_INCLUDE%",
                 "%MINGW_C_INCLUDE%",
                 "C:/OpenCV/opencv-2.4.13/build/include",
-                "C:/mingw64/mingw64/x86_64-w64-mingw32/include"
+                "C:/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/6.2.0/include"
                 ],
             "browse" : {
                 "limitSymbolsToIncludedHeaders" : true,

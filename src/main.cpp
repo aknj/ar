@@ -3,7 +3,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stdio.h>
 #include <iostream>
-#include <bitset>
 #include <algorithm>    // for copy
 #include <iterator>     // for ostream_iterator
 
@@ -64,48 +63,6 @@ typedef struct {
     functions 
 */
 
-
-
-
-
-int marker_hamm_dist(const Mat &bits) {
-    //- all possible correct coded words
-    bool words[4][5] = {
-        {1, 0, 0, 0, 0},            // the first parity check bit is inverted
-        {1, 1, 1, 1, 1},
-        {0, 0, 0, 1, 1},
-        {0, 1, 1, 0, 0}
-    };
-
-    int dist = 0;
-    
-    for (int y = 0; y < 5; y++) {
-        int min_sum = 1e5;
-        for(int p = 0; p < 4; p++) {
-            int sum = 0;
-            // counting
-            for(int x = 0; x < 5; x++) {
-                sum += bits.at<uchar>(y, x) == words[p][x] ? 0 : 1;
-            }
-            if(min_sum > sum)
-                min_sum = sum;
-        }
-        dist += min_sum;
-    }
-    return dist;
-}
-
-int matrix_to_id(const Mat &bits) {
-    int val = 0;
-    for(int y = 0; y < 5; y++) {
-        val <<= 1;
-        if(bits.at<uchar>(y, 2)) val|=1;
-        val <<= 1;
-        if(bits.at<uchar>(y, 4)) val|=1;
-    }
-    return val ? val : -1;
-}
-
 int read_marker_id(Mat &marker_image, int &n_rotations) {
     assert(marker_image.rows == marker_image.cols);
     assert(marker_image.type() == CV_8UC1);
@@ -117,7 +74,6 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
 
     //- markers are divided in 7x7, of which the inner 5x5 belongs to marker
     //--info. the external border should be entirely black
-
     int cell_size = marker_image.rows / 7;
 
     for(int y = 0; y < 7; y++) {

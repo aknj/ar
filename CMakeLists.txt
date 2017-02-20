@@ -28,11 +28,7 @@ target_link_libraries(main
 
 include_directories(
   ${OpenCV_INCLUDES}
-  # c:/mingw64/mingw64/x86_64-w64-mingw32/include
-  # c:/mingw64/mingw64/x86_64-w64-mingw32/include/sys
 )
-
-# link_directories(c:/OpenCV/opencv-2.4.13/release/lib)
 
 
 ## set compile flags safely ###################################################
