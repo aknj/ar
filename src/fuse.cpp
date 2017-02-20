@@ -9,11 +9,12 @@ const map<int, int>
                            {415, 6}
 };
 
-void place_images_and_show(const Mat&           frame, 
-                           vector<marker_t> &   markers, 
+void place_images_and_show(const Mat&           frame,
+                           vector<marker_t> &   markers,
                            vector<Mat>          imgs) {
+
     Mat markers_vis = frame.clone();
-    
+
     for(size_t i = 0; i < markers.size(); i++) {
         marker_t& m = markers[i];
 

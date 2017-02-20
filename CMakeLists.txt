@@ -4,8 +4,8 @@ project("ar")
 
 ## file globbing ##############################################################
 
-# these instructions search the directory tree when cmake is invoked 
-# and put all files that match the pattern in the variables 
+# these instructions search the directory tree when cmake is invoked
+# and put all files that match the pattern in the variables
 # 'sources', 'sources_test', etc.
 file(GLOB   sources   src/*.cpp src/*.hpp)
 # file(GLOB_RECURSE sources_test src/test/*.cpp)

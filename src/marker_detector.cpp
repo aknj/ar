@@ -20,7 +20,7 @@ vector<marker_t> marker_detector(Mat frame) {
     vector<vector<Point> > _contours;
     vector<marker_t> _possible_markers,
                      _markers;
-    
+
     prepare_image(frame, _gray);
     threshold(_gray, _thres);
     find_contours(_thres, _contours, frame.cols / 5);
@@ -71,7 +71,7 @@ void find_possible_markers(const vector<vector<Point> >& contours,
     vector<Point> approx_curve;
     const int MIN_M_CONTOUR_LENGTH_ALLOWED = 100;
 
-    //-- for each contour, analyze if it is a parallelepiped likely to be 
+    //-- for each contour, analyze if it is a parallelepiped likely to be
     //---the marker
     for(size_t i = 0; i < contours.size(); i++) {
         //- approximate to a polygon
@@ -123,12 +123,12 @@ void find_possible_markers(const vector<vector<Point> >& contours,
 }
 
 //- verify/recognize markers
-void find_valid_markers(vector<marker_t> & detected_markers, 
+void find_valid_markers(vector<marker_t> & detected_markers,
                         vector<marker_t> & good_markers,
                         const Mat& grayscale) {
-    
+
     Mat canonical_marker_image = Mat(MARKER_SIZE, grayscale.type());
-    
+
     //- identify the markers
     for(size_t i=0; i < detected_markers.size(); i++) {
         marker_t& marker = detected_markers[i];
@@ -153,7 +153,7 @@ void find_valid_markers(vector<marker_t> & detected_markers,
             //- sort the points of the marker according to its data
             std::rotate(marker.points.begin(),
                         marker.points.begin() + 4 - n_rotations,
-                        marker.points.end() 
+                        marker.points.end()
             );
 
             marker.transform = getPerspectiveTransform(

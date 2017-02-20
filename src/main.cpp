@@ -39,10 +39,7 @@ int main() {
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
     cap.set(CV_CAP_PROP_FPS, FPS);
 
-    // int it = 0;
     Mat frame;
-
-    namedWindow("output", 1);
 
     //- reading images from files ----------------------------------
     vector<Mat> imgs;
@@ -60,13 +57,8 @@ int main() {
 
     //- main loop --------------------------------------------------
     for(;;) {
-        if(!cap.grab()) { 
+        if(!cap.grab()) {
             continue; }
-
-        //- dismiss some frames
-        // it++;
-        // if(it % 10 != 0) {
-        //     continue; }
 
         if(!cap.retrieve(frame) || frame.empty()) {
             continue; }
