@@ -15,8 +15,8 @@ void    draw_polygon(cv::Mat, vector<cv::Point_<float>>&,
 
 cv::Mat bit_matrix_rotate(cv::Mat in);
 
-int     marker_hamm_dist(const cv::Mat &bits);
-
 int     matrix_to_id(const cv::Mat &bits);
+
+int     read_marker_id(cv::Mat &marker_image, int &n_rotations);
 
 #endif
