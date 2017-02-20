@@ -57,6 +57,30 @@ typedef struct {
 } marker_t;
 
 
+void prepare_image(const Mat & bgra_mat, Mat & grayscale) {
+    cvtColor(bgra_mat, grayscale, CV_BGRA2GRAY);
+}
+
+void threshold(const Mat & grayscale, Mat & threshold_img) {
+    //- trackbars for changing the parameters of adaptiveThreshold
+    int t1 = 111;
+#ifdef STEPS
+    createTrackbar("thr_blocksize", "contours_prev", &t1, 121);
+#endif
+    int t2 = 16;
+#ifdef STEPS
+    createTrackbar("thr_c", "contours_prev", &t2, 20);
+#endif
+
+    int thr_blocksize = t1 / 2 * 2 + 3;
+    int thr_c = t2 - 10;
+
+    adaptiveThreshold(grayscale, threshold_img, 255,
+                        CV_ADAPTIVE_THRESH_GAUSSIAN_C,
+                        CV_THRESH_BINARY_INV, thr_blocksize, thr_c);
+}
+
+
 int main() {
 
     VideoCapture cap(0);
@@ -92,15 +116,7 @@ int main() {
     }
 
 
-    //- trackbars for changing the parameters of adaptiveThreshold
-    int t1 = 111;
-#ifdef STEPS
-    createTrackbar("thr_blocksize", "contours_prev", &t1, 121);
-#endif
-    int t2 = 16;
-#ifdef STEPS
-    createTrackbar("thr_c", "contours_prev", &t2, 20);
-#endif
+
 
 
     for(;;) {
@@ -121,16 +137,8 @@ int main() {
         contours_prev = frame.clone();
 
         //- manipulate frame
-        cvtColor(frame, grayscale, CV_BGRA2GRAY);
-
-        
-        int thr_blocksize = t1 / 2 * 2 + 3;
-        int thr_c = t2 - 10;
-
-        adaptiveThreshold(grayscale, threshold_img, 255,
-                          CV_ADAPTIVE_THRESH_GAUSSIAN_C,
-                          CV_THRESH_BINARY_INV, thr_blocksize, thr_c);
-        
+        prepare_image(frame, grayscale);
+        threshold(grayscale, threshold_img);
 
         vector<vector<Point> > all_contours;
         vector<vector<Point> > contours;
