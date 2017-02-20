@@ -7,6 +7,7 @@
 #include <iterator>     // for ostream_iterator
 
 #include "helpers.hpp"
+#include "bit_matrix.hpp"
 
 using namespace std;
 using namespace cv;
@@ -114,14 +115,14 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
     int distances[4];
 
     bit_matrix_rotations[0] = bit_matrix;
-    distances[0] = marker_hamm_dist(bit_matrix_rotations[0]);
+    distances[0] = bm_parity_check(bit_matrix_rotations[0]);
 
     pair<int,int> min_dist(distances[0], 0);
 
     for(int i = 1; i < 4; i++) {
         //- get hamming distance
         bit_matrix_rotations[i] = bit_matrix_rotate(bit_matrix_rotations[i-1]);
-        distances[i] = marker_hamm_dist(bit_matrix_rotations[i]);
+        distances[i] = bm_parity_check(bit_matrix_rotations[i]);
 
         if(distances[i] < min_dist.first) {
             min_dist.first = distances[i];
