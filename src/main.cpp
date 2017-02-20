@@ -2,9 +2,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <stdio.h>
-#include <iostream>
 
-#include "helpers.hpp"
 #include "marker_detector.hpp"
 #include "fuse.hpp"
 

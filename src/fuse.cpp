@@ -27,10 +27,8 @@ void place_images_and_show(const Mat&           frame,
 
         Mat t = Mat::zeros(markers_vis.size(), markers_vis.type());
 
-        warpPerspective( imgs[marker_ids.at(m.id)-1],
-                            t,
-                            m.transform.inv(),
-                            t.size()
+        warpPerspective(
+            imgs[marker_ids.at(m.id)-1], t, m.transform.inv(), t.size()
         );
 
         Mat mask = t == 0;

@@ -1,4 +1,3 @@
-#include "helpers.hpp"
 #include "marker_detector.hpp"
 
 
@@ -125,7 +124,7 @@ void find_possible_markers(const vector<vector<Point> >& contours,
 //- verify/recognize markers
 void find_valid_markers(vector<marker_t> & detected_markers,
                         vector<marker_t> & good_markers,
-                        const Mat& grayscale) {
+                        const Mat & grayscale) {
 
     Mat canonical_marker_image = Mat(MARKER_SIZE, grayscale.type());
 
@@ -136,7 +135,7 @@ void find_valid_markers(vector<marker_t> & detected_markers,
         //- find the perspective transformation that brings current
         //--marker to rectangular form
         Mat marker_transform = getPerspectiveTransform(
-                                    marker.points, CANONICAL_M_CORNERS
+            marker.points, CANONICAL_M_CORNERS
         );
 
         //- transform image to get a canonical marker image
@@ -166,7 +165,7 @@ void find_valid_markers(vector<marker_t> & detected_markers,
 }
 
 //- refine marker corners using subpixel accuracy
-void refine_using_subpix(vector<marker_t> & good_markers, const Mat& grayscale) {
+void refine_using_subpix(vector<marker_t> & good_markers, const Mat & grayscale) {
     vector<Point2f> precise_corners(4 * good_markers.size());
 
     for(size_t i = 0; i < good_markers.size(); i++) {

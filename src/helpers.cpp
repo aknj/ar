@@ -1,5 +1,4 @@
 #include "helpers.hpp"
-#include "bit_matrix.hpp"
 
 using namespace cv;
 
@@ -34,35 +33,6 @@ void draw_polygon(Mat mat_name, vector<Point2f> &poly, Scalar color)
     }
 }
 
-/******************************************************************************
- ** rotates a bit matrix ******************************************************
- */
-Mat bit_matrix_rotate(Mat in) {
-    Mat out;
-    in.copyTo(out);
-    for(int i = 0; i < in.rows; i++) {
-        for(int j = 0; j < in.cols; j++) {
-            out.at<uchar>(i, j) = in.at<uchar>(in.cols-1-j, i);
-        }
-    }
-    // cout << "in = " << endl << in << endl;
-    // cout << "out = " << endl << out << endl;
-    return out;
-}
-
-/******************************************************************************
- **  ******************************************************
- */
-int matrix_to_id(const Mat &bits) {
-    int val = 0;
-    for(int y = 0; y < 5; y++) {
-        val <<= 1;
-        if(bits.at<uchar>(y, 2)) val|=1;
-        val <<= 1;
-        if(bits.at<uchar>(y, 4)) val|=1;
-    }
-    return val ? val : -1;
-}
 
 
 int read_marker_id(Mat &marker_image, int &n_rotations) {
@@ -121,7 +91,6 @@ int read_marker_id(Mat &marker_image, int &n_rotations) {
     pair<int,int> min_dist(distances[0], 0);
 
     for(int i = 1; i < 4; i++) {
-        //- get hamming distance
         bit_matrix_rotations[i] = bit_matrix_rotate(bit_matrix_rotations[i-1]);
         distances[i] = bm_parity_check(bit_matrix_rotations[i]);
 

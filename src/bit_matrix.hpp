@@ -10,8 +10,12 @@
  */
 
 using namespace std;
-using namespace cv;
 
-int     bm_parity_check(const Mat & bits);
+
+int     bm_parity_check(const cv::Mat & bits);
+
+cv::Mat bit_matrix_rotate(cv::Mat in);
+
+int     matrix_to_id(const cv::Mat &bits);
 
 #endif
