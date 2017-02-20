@@ -91,66 +91,6 @@ void find_contours(const Mat & threshold_img, vector<vector<Point> > & contours,
 }
 
 
-void remove_unlikely_markers(vector<marker_t>& possible_markers) {
-    vector<marker_t> tmp = possible_markers;
-
-    //-- remove these elements which corners are too close to each other
-    //--- first detect candidate for removal:
-    vector< pair<int,int> > too_near_candidates;
-    for(size_t i = 0; i < tmp.size(); i++) {
-        const marker_t& m1 = tmp[i];
-
-        //- calculate the avg distance of each corner to the nearest corner
-        //--of the other marker candidate
-        for(size_t j = i+1; j < tmp.size(); j++) {
-            const marker_t& m2 = tmp[j];
-
-            float dist_squared = 0;
-
-            for(int c = 0; c < 4; c++) {
-                Point v = m1.points[c] - m2.points[c];
-                dist_squared += v.dot(v);
-            }
-
-            dist_squared /= 4;
-
-            if(dist_squared < 100) {
-                too_near_candidates.push_back(pair<int,int>(i, j));
-            }
-        }
-    }
-
-    //-- mark the element of the pair with smaller perimeter for removal
-    vector<bool> removal_mask(tmp.size(), false);
-
-    for(size_t i = 0; i < too_near_candidates.size(); i++) {
-        float p1 = perimeter(
-            tmp[ too_near_candidates[i].first  ].points
-        );
-        float p2 = perimeter(
-            tmp[ too_near_candidates[i].second ].points
-        );
-
-        size_t removal_index;
-        if(p1 > p2)
-            removal_index = too_near_candidates[i].second;
-        else
-            removal_index = too_near_candidates[i].first;
-
-        removal_mask[removal_index] = true;
-    }
-
-    //-- return candidates
-    possible_markers.clear();
-
-    for(size_t i = 0; i < tmp.size(); i++) {
-        if(!removal_mask[i]) {
-            possible_markers.push_back(tmp[i]);
-        }
-    }
-}
-
-
 void find_possible_markers(const vector<vector<Point> >& contours,
                             vector<marker_t> & possible_markers) {
     vector<Point> approx_curve;
@@ -203,8 +143,6 @@ void find_possible_markers(const vector<vector<Point> >& contours,
 
 
         possible_markers.push_back(m);
-
-        remove_unlikely_markers(possible_markers);
     }
 }
 
