@@ -62,15 +62,8 @@ void prepare_image(const Mat & bgra_mat, Mat & grayscale) {
 }
 
 void threshold(const Mat & grayscale, Mat & threshold_img) {
-    //- trackbars for changing the parameters of adaptiveThreshold
     int t1 = 111;
-#ifdef STEPS
-    createTrackbar("thr_blocksize", "contours_prev", &t1, 121);
-#endif
     int t2 = 16;
-#ifdef STEPS
-    createTrackbar("thr_c", "contours_prev", &t2, 20);
-#endif
 
     int thr_blocksize = t1 / 2 * 2 + 3;
     int thr_c = t2 - 10;
@@ -95,18 +88,203 @@ void find_contours(const Mat & threshold_img, vector<vector<Point> > & contours,
             contours.push_back(all_contours[i]);
         }
     }
+}
 
-#ifdef STEPS
-    contours_prev = Mat::zeros(frame.size(), CV_8UC3);
-    markers_prev = Mat::zeros(frame.size(), CV_8UC3);
 
-    drawContours(contours_prev, contours, -1, Scalar(255,0,0));
-#endif
+void remove_unlikely_markers(vector<marker_t>& possible_markers) {
+    vector<marker_t> tmp = possible_markers;
+
+    //-- remove these elements which corners are too close to each other
+    //--- first detect candidate for removal:
+    vector< pair<int,int> > too_near_candidates;
+    for(size_t i = 0; i < tmp.size(); i++) {
+        const marker_t& m1 = tmp[i];
+
+        //- calculate the avg distance of each corner to the nearest corner
+        //--of the other marker candidate
+        for(size_t j = i+1; j < tmp.size(); j++) {
+            const marker_t& m2 = tmp[j];
+
+            float dist_squared = 0;
+
+            for(int c = 0; c < 4; c++) {
+                Point v = m1.points[c] - m2.points[c];
+                dist_squared += v.dot(v);
+            }
+
+            dist_squared /= 4;
+
+            if(dist_squared < 100) {
+                too_near_candidates.push_back(pair<int,int>(i, j));
+            }
+        }
+    }
+
+    //-- mark the element of the pair with smaller perimeter for removal
+    vector<bool> removal_mask(tmp.size(), false);
+
+    for(size_t i = 0; i < too_near_candidates.size(); i++) {
+        float p1 = perimeter(
+            tmp[ too_near_candidates[i].first  ].points
+        );
+        float p2 = perimeter(
+            tmp[ too_near_candidates[i].second ].points
+        );
+
+        size_t removal_index;
+        if(p1 > p2)
+            removal_index = too_near_candidates[i].second;
+        else
+            removal_index = too_near_candidates[i].first;
+
+        removal_mask[removal_index] = true;
+    }
+
+    //-- return candidates
+    possible_markers.clear();
+
+    for(size_t i = 0; i < tmp.size(); i++) {
+        if(!removal_mask[i]) {
+            possible_markers.push_back(tmp[i]);
+        }
+    }
+}
+
+
+void find_possible_markers(const vector<vector<Point> >& contours,
+                            vector<marker_t> & possible_markers) {
+    vector<Point> approx_curve;
+
+    //-- for each contour, analyze if it is a parallelepiped likely to be 
+    //---the marker
+    for(size_t i = 0; i < contours.size(); i++) {
+        //- approximate to a polygon
+        double eps = contours[i].size() * 0.05;
+        approxPolyDP(contours[i], approx_curve, eps, true);
+
+        //- we're interested only in polygons that contain only 4 points
+        if(approx_curve.size() != 4)
+            continue;
+
+        //- and they have to be convex
+        if(!isContourConvex(approx_curve))
+            continue;
+
+        //- ensure that the distance b/w consecutive points is large enough
+        float min_dist = numeric_limits<float>::max();
+
+        for(int i = 0; i < 4; i++) {
+            Point side = approx_curve[i] - approx_curve[(i+1)%4];
+            float squared_side_length = side.dot(side);
+            min_dist = min(min_dist, squared_side_length);
+        }
+
+        //- check that distance is not very small
+        if(min_dist < MIN_M_CONTOUR_LENGTH_ALLOWED)
+            continue;
+
+        //- all tests are passed. save marker candidate
+        marker_t m;
+
+        for(int i = 0; i < 4; i++)
+            m.points.push_back(Point2f(approx_curve[i].x, approx_curve[i].y));
+
+        //- sort the points in anti-clockwise order
+        //- trace a line between the first and second point
+        //- if the third point is at the right side, then the points are
+        //--anti-clockwise
+        Point v1 = m.points[1] - m.points[0];
+        Point v2 = m.points[2] - m.points[0];
+
+        double o = (v1.x * v2.y) - (v1.y * v2.x);
+
+        if(o < 0.0)               //- if the 3rd point is on the left side,
+            swap(m.points[1], m.points[3]);        //--sort anti-clockwise
+
+
+        possible_markers.push_back(m);
+
+        remove_unlikely_markers(possible_markers);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//- verify/recognize markers
+void find_valid_markers(vector<marker_t> & detected_markers, 
+                        vector<marker_t> & good_markers,
+                        const Mat& grayscale) {
+    
+    Mat canonical_marker_image = Mat(MARKER_SIZE, grayscale.type());
+    
+    //- identify the markers
+    for(size_t i=0; i < detected_markers.size(); i++) {
+        marker_t& marker = detected_markers[i];
+
+        //- find the perspective transformation that brings current
+        //--marker to rectangular form
+        Mat marker_transform = getPerspectiveTransform(
+                                    marker.points, CANONICAL_M_CORNERS
+        );
+
+        //- transform image to get a canonical marker image
+        warpPerspective(grayscale, canonical_marker_image,
+                        marker_transform, MARKER_SIZE
+        );
+
+
+        int n_rotations;
+        int id = read_marker_id(canonical_marker_image, n_rotations);
+        if(id != -1) {
+            marker.id = id;
+            marker.transform = marker_transform;
+            //- sort the points of the marker according to its data
+            std::rotate(marker.points.begin(),
+                        marker.points.begin() + 4 - n_rotations,
+                        marker.points.end() 
+            );
+
+            marker.transform = getPerspectiveTransform(
+                marker.points, CANONICAL_M_CORNERS
+            );
+
+            good_markers.push_back(marker);
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//- refine marker corners using subpixel accuracy
+void refine_using_subpix(vector<marker_t> & good_markers, const Mat& grayscale) {
+    vector<Point2f> precise_corners(4 * good_markers.size());
+
+    for(size_t i = 0; i < good_markers.size(); i++) {
+        const marker_t& m = good_markers[i];
+
+        for(int c = 0; c < 4; c++) {
+            precise_corners[i*4 + c] = m.points[c];
+        }
+    }
+
+    TermCriteria term_criteria = TermCriteria(
+        TermCriteria::MAX_ITER | TermCriteria::EPS, 30, .01
+    );
+    cornerSubPix(
+        grayscale, precise_corners, Size(5,5), Size(-1,-1),
+        term_criteria
+    );
+
+    //-copy refined corners positions back to markers
+    for(size_t i = 0; i < good_markers.size(); i++) {
+        marker_t& m = good_markers[i];
+
+        for(int c = 0; c < 4; c++) {
+            m.points[c] = precise_corners[i*4 + c];
+        }
+    }
 }
 
 
 int main() {
-
     VideoCapture cap(0);
 
     if(!cap.isOpened()) {
@@ -114,7 +292,7 @@ int main() {
         return 0;
     }
 
-    //- set resolution & frame rate (FPS)
+    //- set resolution & frame rate (FPS) --------------------------
     cap.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
     cap.set(CV_CAP_PROP_FPS, FPS);
@@ -125,7 +303,7 @@ int main() {
 
     namedWindow("output", 1);
 
-    //- reading images from files
+    //- reading images from files ----------------------------------
     vector<Mat> imgs;
 
     for(int i = 0; i < 6; i++) {
@@ -139,10 +317,7 @@ int main() {
         resize(imgs[i], imgs[i], MARKER_SIZE);
     }
 
-
-
-
-
+    //- main loop --------------------------------------------------
     for(;;) {
         if(!cap.grab())
             continue;
@@ -157,8 +332,6 @@ int main() {
 
         //- copy frame to marker visualization Mat
         markers_vis = frame.clone();
-        markers_prev = frame.clone();
-        contours_prev = frame.clone();
 
         //- manipulate frame
         prepare_image(frame, grayscale);
@@ -169,226 +342,59 @@ int main() {
         //- populate the contours vector
         find_contours(threshold_img, contours, frame.cols / 5);
 
+#ifdef STEPS
+        contours_prev = Mat::zeros(grayscale.size(), CV_8UC3);
+
+        drawContours(contours_prev, contours, -1, Scalar(255,0,0));
+#endif
+
         //- find candidates -------
         vector<marker_t> possible_markers,
-                         detected_markers,
                          good_markers;
-        vector<Point> approx_curve;
 
-        //-- for each contour, analyze if it is a parallelepiped likely to be 
-        //---the marker
-        for(size_t i = 0; i < contours.size(); i++) {
-            //- approximate to a polygon
-            double eps = contours[i].size() * 0.05;
-            approxPolyDP(contours[i], approx_curve, eps, true);
+        find_possible_markers(contours, possible_markers);
 
-            //- i'm interested only in polygons that contain only 4 points
-            if(approx_curve.size() != 4)
-                continue;
-
-            //- and they have to be convex
-            if(!isContourConvex(approx_curve))
-                continue;
-
-            //- ensure that the distance b/w consecutive points is large enough
-            float min_dist = numeric_limits<float>::max();
-
-            for(int i = 0; i < 4; i++) {
-                Point side = approx_curve[i] - approx_curve[(i+1)%4];
-                float squared_side_length = side.dot(side);
-                min_dist = min(min_dist, squared_side_length);
-            }
-
-            //- check that distance is not very small
-            if(min_dist < MIN_M_CONTOUR_LENGTH_ALLOWED)
-                continue;
-
-            //- all tests are passed. save marker candidate
-            marker_t m;
-
-            for(int i = 0; i < 4; i++)
-                m.points.push_back(Point2f(approx_curve[i].x, approx_curve[i].y));
-
-            //- sort the points in anti-clockwise order
-            //- trace a line between the first and second point
-            //- if the third point is at the right side, then the points are
-            //--anti-clockwise
-            Point v1 = m.points[1] - m.points[0];
-            Point v2 = m.points[2] - m.points[0];
-
-            double o = (v1.x * v2.y) - (v1.y * v2.x);
-
-            if(o < 0.0)               //- if the 3rd point is on the left side,
-                swap(m.points[1], m.points[3]);        //--sort anti-clockwise
-
-
-            possible_markers.push_back(m);
-        }
-
-        //-- remove these elements which corners are too close to each other
-        //--- first detect candidate for removal:
-        vector< pair<int,int> > too_near_candidates;
-        for(size_t i = 0; i < possible_markers.size(); i++) {
-            const marker_t& m1 = possible_markers[i];
-
-            //- calculate the avg distance of each corner to the nearest corner
-            //--of the other marker candidate
-            for(size_t j = i+1; j < possible_markers.size(); j++) {
-                const marker_t& m2 = possible_markers[j];
-
-                float dist_squared = 0;
-
-                for(int c = 0; c < 4; c++) {
-                    Point v = m1.points[c] - m2.points[c];
-                    dist_squared += v.dot(v);
-                }
-
-                dist_squared /= 4;
-
-                if(dist_squared < 100) {
-                    too_near_candidates.push_back(pair<int,int>(i, j));
-                }
-            }
-        }
-
-        //-- mark the element of the pair with smaller perimeter for removal
-        vector<bool> removal_mask(possible_markers.size(), false);
-
-        for(size_t i = 0; i < too_near_candidates.size(); i++) {
-            float p1 = perimeter(
-                possible_markers[ too_near_candidates[i].first  ].points
-            );
-            float p2 = perimeter(
-                possible_markers[ too_near_candidates[i].second ].points
-            );
-
-            size_t removal_index;
-            if(p1 > p2)
-                removal_index = too_near_candidates[i].second;
-            else
-                removal_index = too_near_candidates[i].first;
-
-            removal_mask[removal_index] = true;
-        }
-
-        //-- return candidates
-        detected_markers.clear();
-        for(size_t i = 0; i < possible_markers.size(); i++) {
-            if(!removal_mask[i]) {
-                detected_markers.push_back(possible_markers[i]);
 #ifdef STEPS
-                draw_polygon(markers_prev, possible_markers[i].points);
+        markers_prev = Mat::zeros(grayscale.size(), CV_8UC3);
+        for(size_t i = 0; i < possible_markers.size(); i++) {
+            draw_polygon(markers_prev, possible_markers[i].points);
+        }
 #endif
-            }
-        }
 
-        ////////////////////////////////////////////////////////////////////////
-        //-- verify/recognize markers
-        {
-            
-            Mat canonical_marker_image = Mat(MARKER_SIZE, grayscale.type());
-            
-            //- identify the markers
-            for(size_t i=0; i < detected_markers.size(); i++) {
-                marker_t& marker = detected_markers[i];
+        find_valid_markers(possible_markers, good_markers, grayscale);
 
-                //- find the perspective transformation that brings current
-                //--marker to rectangular form
-                Mat marker_transform = getPerspectiveTransform(
-                                            marker.points, CANONICAL_M_CORNERS
-                );
-
-                //- transform image to get a canonical marker image
-                warpPerspective(grayscale, canonical_marker_image,
-                                marker_transform, MARKER_SIZE
-                );
-
-
-                int n_rotations;
-                int id = read_marker_id(canonical_marker_image, n_rotations);
-                if(id != -1) {
-                    marker.id = id;
-                    marker.transform = marker_transform;
-                    //- sort the points of the marker according to its data
-                    std::rotate(marker.points.begin(),
-                                marker.points.begin() + 4 - n_rotations,
-                                marker.points.end() 
-                    );
-
-                    marker.transform = getPerspectiveTransform(
-                        marker.points, CANONICAL_M_CORNERS
-                    );
-
-                    good_markers.push_back(marker);
-                }
-            }
-        }
-
-
-        ////////////////////////////////////////////////////////////////////////
-        //- refine marker corners using subpixel accuracy
         if(good_markers.size() > 0) {
-            vector<Point2f> precise_corners(4 * good_markers.size());
+            refine_using_subpix(good_markers, grayscale);
+        }
 
-            for(size_t i = 0; i < good_markers.size(); i++) {
-                const marker_t& m = good_markers[i];
+        //- for valid markers ---------------------------------
+        for(size_t i = 0; i < good_markers.size(); i++) {
+            marker_t& m = good_markers[i];
 
-                for(int c = 0; c < 4; c++) {
-                    precise_corners[i*4 + c] = m.points[c];
-                }
+            if(marker_ids.find(m.id) == marker_ids.end()) {
+                cout << "false marker id: " << m.id << endl << endl;
+                continue;
             }
 
-            TermCriteria term_criteria = TermCriteria(
-                TermCriteria::MAX_ITER | TermCriteria::EPS, 30, .01
+            //- place images on output frame ------------------
+            Mat t = Mat::zeros(markers_vis.size(), markers_vis.type());
+
+            warpPerspective( imgs[marker_ids.at(m.id)-1],
+                                t,
+                                m.transform.inv(),
+                                t.size()
             );
-            cornerSubPix(
-                grayscale, precise_corners, Size(5,5), Size(-1,-1),
-                term_criteria
-            );
 
-            //-copy refined corners positions back to markers
-            for(size_t i = 0; i < good_markers.size(); i++) {
-                marker_t& m = good_markers[i];
+            Mat mask = t == 0;
+            bitwise_and(mask, markers_vis, markers_vis);
+            bitwise_or(t, markers_vis, markers_vis);
 
-                for(int c = 0; c < 4; c++) {
-                    m.points[c] = precise_corners[i*4 + c];
-                }
-            }
-
-            detected_markers = good_markers;
-        
-            ////////////////////////////////////////////////////////////////////
-            //- operations on good markers
-            for(size_t i = 0; i < detected_markers.size(); i++) {
-                marker_t& m = detected_markers[i];
-                
-                if(marker_ids.find(m.id) == marker_ids.end()) {
-                    cout << "false marker id: " << m.id << endl << endl;
-                    continue;
-                }
-
-                ////////////////////////////////////////////////////////////////
-                //- place images on output frame
-                Mat t = Mat::zeros(markers_vis.size(), markers_vis.type());
-
-                warpPerspective(    imgs[marker_ids.at(m.id)-1],
-                                    t,
-                                    m.transform.inv(),
-                                    t.size()
-                               );
-
-                Mat mask = t == 0;
-                bitwise_and(mask, markers_vis, markers_vis);
-                bitwise_or(t, markers_vis, markers_vis);
-
-                draw_polygon(markers_vis, m.points);
-            }
+            draw_polygon(markers_vis, m.points);
         }
 
 
         if(waitKey(155) == 27)
             break;
-            
 
 
 #ifdef STEPS
