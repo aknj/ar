@@ -22,27 +22,25 @@ const int   HEIGHT = 240 * 2;
 #endif
 const int   FPS = 60;
 
-const int   MIN_M_CONTOUR_LENGTH_ALLOWED = 100;
-
 //- size and corners of the canonical marker
 const Size  MARKER_SIZE = Size(100,100);
 static
 const Point2f
-            PTS[] = {   Point2f(0,0),
-                        Point2f(MARKER_SIZE.width-1,0),
-                        Point2f(MARKER_SIZE.width-1,MARKER_SIZE.height-1),
-                        Point2f(0,MARKER_SIZE.height-1)
+            PTS[] = { Point2f(0,0),
+                      Point2f(MARKER_SIZE.width-1, 0),
+                      Point2f(MARKER_SIZE.width-1, MARKER_SIZE.height-1),
+                      Point2f(0, MARKER_SIZE.height-1)
 };
 const vector<Point2f>
             CANONICAL_M_CORNERS( PTS, PTS + sizeof(PTS)/sizeof(PTS[0]) );
 
 const map<int, int>
-            marker_ids = {  {106, 1},
-                            {107, 2},
-                            {108, 3},
-                            {270, 4},
-                            {300, 5},
-                            {415, 6}
+            marker_ids = { {106, 1},
+                           {107, 2},
+                           {108, 3},
+                           {270, 4},
+                           {300, 5},
+                           {415, 6}
 };
 
 
@@ -56,6 +54,10 @@ typedef struct {
     Mat transform;
 } marker_t;
 
+
+/******************************************************************************
+    functions
+*/
 
 void prepare_image(const Mat & bgra_mat, Mat & grayscale) {
     cvtColor(bgra_mat, grayscale, CV_BGRA2GRAY);
@@ -90,10 +92,10 @@ void find_contours(const Mat & threshold_img, vector<vector<Point> > & contours,
     }
 }
 
-
 void find_possible_markers(const vector<vector<Point> >& contours,
                             vector<marker_t> & possible_markers) {
     vector<Point> approx_curve;
+    const int MIN_M_CONTOUR_LENGTH_ALLOWED = 100;
 
     //-- for each contour, analyze if it is a parallelepiped likely to be 
     //---the marker
@@ -146,7 +148,6 @@ void find_possible_markers(const vector<vector<Point> >& contours,
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
 //- verify/recognize markers
 void find_valid_markers(vector<marker_t> & detected_markers, 
                         vector<marker_t> & good_markers,
@@ -190,7 +191,6 @@ void find_valid_markers(vector<marker_t> & detected_markers,
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
 //- refine marker corners using subpixel accuracy
 void refine_using_subpix(vector<marker_t> & good_markers, const Mat& grayscale) {
     vector<Point2f> precise_corners(4 * good_markers.size());
@@ -282,7 +282,6 @@ int main() {
 
 #ifdef STEPS
         contours_prev = Mat::zeros(grayscale.size(), CV_8UC3);
-
         drawContours(contours_prev, contours, -1, Scalar(255,0,0));
 #endif
 
