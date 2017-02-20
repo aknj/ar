@@ -80,6 +80,30 @@ void threshold(const Mat & grayscale, Mat & threshold_img) {
                         CV_THRESH_BINARY_INV, thr_blocksize, thr_c);
 }
 
+void find_contours(const Mat & threshold_img, vector<vector<Point> > & contours,
+                    int min_every_contour_length) {
+    vector<vector<Point> > all_contours;
+
+    Mat contours_img;
+    threshold_img.copyTo(contours_img);
+    findContours(threshold_img, all_contours, CV_RETR_LIST,
+                    CV_CHAIN_APPROX_NONE);
+
+    for(size_t i = 0; i < all_contours.size(); i++) {
+        int contourSize = all_contours[i].size();
+        if(contourSize > min_every_contour_length) {
+            contours.push_back(all_contours[i]);
+        }
+    }
+
+#ifdef STEPS
+    contours_prev = Mat::zeros(frame.size(), CV_8UC3);
+    markers_prev = Mat::zeros(frame.size(), CV_8UC3);
+
+    drawContours(contours_prev, contours, -1, Scalar(255,0,0));
+#endif
+}
+
 
 int main() {
 
@@ -140,27 +164,10 @@ int main() {
         prepare_image(frame, grayscale);
         threshold(grayscale, threshold_img);
 
-        vector<vector<Point> > all_contours;
         vector<vector<Point> > contours;
 
-        Mat contours_img;
-        threshold_img.copyTo(contours_img);
-        findContours(contours_img, all_contours, CV_RETR_LIST,
-                     CV_CHAIN_APPROX_NONE);
-
-        for(size_t i = 0; i < all_contours.size(); i++) {
-            int contourSize = all_contours[i].size();
-            if(contourSize > 4) {
-                contours.push_back(all_contours[i]);
-            }
-        }
-
-#ifdef STEPS
-        contours_prev = Mat::zeros(frame.size(), CV_8UC3);
-        markers_prev = Mat::zeros(frame.size(), CV_8UC3);
-
-        drawContours(contours_prev, contours, -1, Scalar(255,0,0));
-#endif
+        //- populate the contours vector
+        find_contours(threshold_img, contours, frame.cols / 5);
 
         //- find candidates -------
         vector<marker_t> possible_markers,
