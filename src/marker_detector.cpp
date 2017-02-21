@@ -17,7 +17,7 @@ vector<Point2f>
 void marker_detector(Mat frame, vector<marker_t> markers) {
     Mat _gray, _thres;
     vector<vector<Point> > _contours;
-    vector<marker_t> _possible_markers,
+    vector<marker_t> _possible_markers;
 
     prepare_image(frame, _gray);
     threshold(_gray, _thres);
@@ -26,6 +26,10 @@ void marker_detector(Mat frame, vector<marker_t> markers) {
     find_valid_markers(_possible_markers, markers, _gray);
     if(markers.size() > 0) {
         refine_using_subpix(markers, _gray); }
+
+    // drawContours(_thres, _contours, -1, Scalar(255,0,0));
+    // show_bla(_thres);
+    // cout << "bla";
 }
 
 
@@ -61,7 +65,7 @@ void find_contours(const Mat & src, vector<vector<Point> > & contours,
     }
 
     drawContours(contours_img, contours, -1, Scalar(255,0,0));
-    show(contours_img);
+    show_preview(contours_img);
 }
 
 void find_possible_markers(const vector<vector<Point> >& contours,

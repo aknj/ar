@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "marker_detector.hpp"
-#include "fuse.hpp"
+#include "join.hpp"
 
 using namespace std;
 using namespace cv;
@@ -22,7 +22,6 @@ const int   HEIGHT = 240 * 2;
 #endif
 const int   FPS = 60;
 
-namedWindow("preview", 1);
 
 int main() {
     VideoCapture cap(0);

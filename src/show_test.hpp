@@ -1,13 +1,12 @@
 #ifndef _SHOW_TEST_HPP
 #define _SHOW_TEST_HPP
 
-#include "show_test.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
-namespace cv {
-    inline void prepare_test_image(cv::Mat & mat) {
-        cv::imshow("preview", mat);
-        cv::waitKey(0);
-    }
+inline void show_preview(cv::Mat & mat) {
+    cv::imshow("preview", mat);
 }
 
 #endif
