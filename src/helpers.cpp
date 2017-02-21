@@ -33,6 +33,8 @@ void draw_polygon(Mat mat_name, vector<Point2f> &poly, Scalar color)
     }
 }
 
+//void show_and_save(Mat mat_name, )
+
 
 
 int read_marker_id(Mat &marker_image, int &n_rotations) {

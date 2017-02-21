@@ -14,21 +14,18 @@ vector<Point2f>
 
 
 
-vector<marker_t> marker_detector(Mat frame) {
+void marker_detector(Mat frame, vector<marker_t> markers) {
     Mat _gray, _thres;
     vector<vector<Point> > _contours;
     vector<marker_t> _possible_markers,
-                     _markers;
 
     prepare_image(frame, _gray);
     threshold(_gray, _thres);
     find_contours(_thres, _contours, frame.cols / 5);
     find_possible_markers(_contours, _possible_markers);
-    find_valid_markers(_possible_markers, _markers, _gray);
-    if(_markers.size() > 0) {
-        refine_using_subpix(_markers, _gray); }
-
-    return _markers;
+    find_valid_markers(_possible_markers, markers, _gray);
+    if(markers.size() > 0) {
+        refine_using_subpix(markers, _gray); }
 }
 
 
@@ -48,14 +45,13 @@ void threshold(const Mat & grayscale, Mat & threshold_img) {
                         CV_THRESH_BINARY_INV, thr_blocksize, thr_c);
 }
 
-void find_contours(const Mat & threshold_img, vector<vector<Point> > & contours,
+void find_contours(const Mat & src, vector<vector<Point> > & contours,
                     int min_every_contour_length) {
     vector<vector<Point> > all_contours;
 
     Mat contours_img;
-    threshold_img.copyTo(contours_img);
-    findContours(threshold_img, all_contours, CV_RETR_LIST,
-                    CV_CHAIN_APPROX_NONE);
+    src.copyTo(contours_img);
+    findContours(contours_img, all_contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
     for(size_t i = 0; i < all_contours.size(); i++) {
         int contourSize = all_contours[i].size();
@@ -63,6 +59,9 @@ void find_contours(const Mat & threshold_img, vector<vector<Point> > & contours,
             contours.push_back(all_contours[i]);
         }
     }
+
+    drawContours(contours_img, contours, -1, Scalar(255,0,0));
+    show(contours_img);
 }
 
 void find_possible_markers(const vector<vector<Point> >& contours,

@@ -22,7 +22,7 @@ const int   HEIGHT = 240 * 2;
 #endif
 const int   FPS = 60;
 
-
+namedWindow("preview", 1);
 
 int main() {
     VideoCapture cap(0);
@@ -61,7 +61,9 @@ int main() {
         if(!cap.retrieve(frame) || frame.empty()) {
             continue; }
 
-        vector<marker_t> markers = marker_detector(frame);
+        vector<marker_t> markers; 
+        
+        marker_detector(frame, markers);
 
         place_images_and_show(frame, markers, imgs);
 

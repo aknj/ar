@@ -5,6 +5,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "helpers.hpp"
+#include "show_test.hpp"
 
 using namespace std;
 using namespace cv;
@@ -31,7 +32,7 @@ extern const Size MARKER_SIZE;
     function headers
 */
 
-vector<marker_t> marker_detector(Mat frame);
+void marker_detector(Mat frame, vector<marker_t>);
 
 void prepare_image(const Mat &, Mat &);
 
