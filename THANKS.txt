@@ -1,4 +1,2 @@
+Daniel Lélis Baggio, Mastering OpenCV with Practical Computer Vision Projects, ch. 2.
 https://github.com/MasteringOpenCV/code
-the book "Mastering OpenCV with Practical Computer Vision Projects",
-esp. Chapter 2.
-has been of great help during this project
