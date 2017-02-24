@@ -13,8 +13,7 @@ vector<Point2f>
             CANONICAL_M_CORNERS( PTS, PTS + sizeof(PTS)/sizeof(PTS[0]) );
 
 
-
-void marker_detector(Mat frame, vector<marker_t> markers) {
+void marker_detector(Mat frame, vector<marker_t>& markers) {
     Mat _gray, _thres;
     vector<vector<Point> > _contours;
     vector<marker_t> _possible_markers;
@@ -22,14 +21,10 @@ void marker_detector(Mat frame, vector<marker_t> markers) {
     prepare_image(frame, _gray);
     threshold(_gray, _thres);
     find_contours(_thres, _contours, frame.cols / 5);
-    find_possible_markers(_contours, _possible_markers);
+    find_possible_markers(_contours, _possible_markers, frame);
     find_valid_markers(_possible_markers, markers, _gray);
     if(markers.size() > 0) {
         refine_using_subpix(markers, _gray); }
-
-    // drawContours(_thres, _contours, -1, Scalar(255,0,0));
-    // show_bla(_thres);
-    // cout << "bla";
 }
 
 
@@ -65,11 +60,12 @@ void find_contours(const Mat & src, vector<vector<Point> > & contours,
     }
 
     drawContours(contours_img, contours, -1, Scalar(255,0,0));
-    show_preview(contours_img);
+    show_preview("contours preview", contours_img);
 }
 
 void find_possible_markers(const vector<vector<Point> >& contours,
-                            vector<marker_t> & possible_markers) {
+                            vector<marker_t> & possible_markers,
+                            Mat frame) {
     vector<Point> approx_curve;
     const int MIN_M_CONTOUR_LENGTH_ALLOWED = 100;
 
@@ -122,6 +118,11 @@ void find_possible_markers(const vector<vector<Point> >& contours,
 
         possible_markers.push_back(m);
     }
+
+    for(size_t i = 0; i < possible_markers.size(); i++) {
+        draw_polygon(frame, possible_markers[i].points);
+    }
+    show_preview("possible markers preview", frame);
 }
 
 //- verify/recognize markers
@@ -130,6 +131,7 @@ void find_valid_markers(vector<marker_t> & detected_markers,
                         const Mat & grayscale) {
 
     Mat canonical_marker_image = Mat(MARKER_SIZE, grayscale.type());
+    Mat preview = grayscale.clone();
 
     //- identify the markers
     for(size_t i=0; i < detected_markers.size(); i++) {
@@ -163,8 +165,17 @@ void find_valid_markers(vector<marker_t> & detected_markers,
             );
 
             good_markers.push_back(marker);
-        }
+
+            draw_polygon(preview, marker.points);
+            char label[10];
+            sprintf(label, "id: %d", marker.id);
+            putText(preview, label, marker.points[0], 
+                    FONT_HERSHEY_SIMPLEX, .5, 
+                    Scalar(rand()%255, rand()%255, rand()%255)
+            );
+        }   
     }
+    show_preview("markers preview", preview);
 }
 
 //- refine marker corners using subpixel accuracy

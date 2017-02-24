@@ -32,7 +32,7 @@ extern const Size MARKER_SIZE;
     function headers
 */
 
-void marker_detector(Mat frame, vector<marker_t>);
+void marker_detector(Mat frame, vector<marker_t>&);
 
 void prepare_image(const Mat &, Mat &);
 
@@ -40,7 +40,8 @@ void threshold(const Mat &, Mat &);
 
 void find_contours(const Mat &, vector<vector<Point> > &, int);
 
-void find_possible_markers(const vector<vector<Point> > &, vector<marker_t> &);
+void find_possible_markers(const vector<vector<Point> > &, vector<marker_t> &,
+                            Mat preview_image);
 
 void find_valid_markers(vector<marker_t> &, vector<marker_t> &, const Mat &);
 

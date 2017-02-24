@@ -1,5 +1,5 @@
-#ifndef _FUSE_HPP
-#define _FUSE_HPP
+#ifndef _JOIN_HPP
+#define _JOIN_HPP
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>

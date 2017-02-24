@@ -7,7 +7,7 @@ project("ar")
 # these instructions search the directory tree when cmake is invoked
 # and put all files that match the pattern in the variables
 # 'sources', 'sources_test', etc.
-file(GLOB   sources   src/*.cpp src/*.hpp)
+file(GLOB   sources   *.cpp *.hpp)
 # file(GLOB_RECURSE sources_test src/test/*.cpp)
 # file(GLOB_RECURSE data resources/*)
 # you can use set(sources src/main.cpp) etc if you don't want to
