@@ -13,7 +13,7 @@ vector<Point2f>
             CANONICAL_M_CORNERS( PTS, PTS + sizeof(PTS)/sizeof(PTS[0]) );
 
 
-void marker_detector(Mat frame, vector<marker_t>& markers) {
+void marker_detector(const Mat & frame, vector<marker_t> & markers) {
     Mat _gray, _thres;
     vector<vector<Point> > _contours;
     vector<marker_t> _possible_markers;
@@ -21,7 +21,7 @@ void marker_detector(Mat frame, vector<marker_t>& markers) {
     prepare_image(frame, _gray);
     threshold(_gray, _thres);
     find_contours(_thres, _contours, frame.cols / 5);
-    find_possible_markers(_contours, _possible_markers, frame);
+    find_possible_markers(_contours, _possible_markers, frame.clone());
     find_valid_markers(_possible_markers, markers, _gray);
     if(markers.size() > 0) {
         refine_using_subpix(markers, _gray); }
@@ -63,7 +63,7 @@ void find_contours(const Mat & src, vector<vector<Point> > & contours,
     show_preview("contours preview", contours_img);
 }
 
-void find_possible_markers(const vector<vector<Point> >& contours,
+void find_possible_markers(const vector<vector<Point> > & contours,
                             vector<marker_t> & possible_markers,
                             Mat frame) {
     vector<Point> approx_curve;

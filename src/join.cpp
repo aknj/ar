@@ -25,15 +25,16 @@ void place_images_and_show(const Mat&           frame,
         }
     #endif
 
-        Mat t = Mat::zeros(markers_vis.size(), markers_vis.type());
+        Mat img_warped = Mat::zeros(markers_vis.size(), markers_vis.type());
 
         warpPerspective(
-            imgs[marker_ids.at(m.id)-1], t, m.transform.inv(), t.size()
+            imgs[marker_ids.at(m.id)-1], img_warped, m.transform.inv(), 
+            img_warped.size()
         );
 
-        Mat mask = t == 0;
+        Mat mask = img_warped == 0;
         bitwise_and(mask, markers_vis, markers_vis);
-        bitwise_or(t, markers_vis, markers_vis);
+        bitwise_or(img_warped, markers_vis, markers_vis);
 
         draw_polygon(markers_vis, m.points);
     }

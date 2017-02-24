@@ -32,7 +32,7 @@ extern const Size MARKER_SIZE;
     function headers
 */
 
-void marker_detector(Mat frame, vector<marker_t>&);
+void marker_detector(const Mat & frame, vector<marker_t> &);
 
 void prepare_image(const Mat &, Mat &);
 
