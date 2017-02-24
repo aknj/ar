@@ -1,6 +1,6 @@
 # cmake and compile:
 
-cmake build -G "MinGW Makefiles"
-
+mkdir build
 cd build
+cmake ../src -G "MinGW Makefiles"
 mingw32-make.exe
