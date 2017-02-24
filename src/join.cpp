@@ -17,14 +17,14 @@ void place_images_and_show(const Mat&           frame,
 
     for(size_t i = 0; i < markers.size(); i++) {
         marker_t& m = markers[i];
-
-    #ifdef DEBUG
+    
         if(marker_ids.find(m.id) == marker_ids.end()) {
+            #ifdef DEBUG
             cout << "false marker id: " << m.id << endl << endl;
+            #endif
             continue;
         }
-    #endif
-
+    
         Mat img_warped = Mat::zeros(markers_vis.size(), markers_vis.type());
 
         warpPerspective(
@@ -36,7 +36,7 @@ void place_images_and_show(const Mat&           frame,
         bitwise_and(mask, markers_vis, markers_vis);
         bitwise_or(img_warped, markers_vis, markers_vis);
 
-        draw_polygon(markers_vis, m.points);
+        // draw_polygon(markers_vis, m.points);
     }
 
     imshow("output", markers_vis);
