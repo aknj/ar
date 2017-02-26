@@ -29,12 +29,15 @@ void place_images_and_show(const Mat&           frame,
 
         warpPerspective(
             imgs[marker_ids.at(m.id)-1], img_warped, m.transform.inv(), 
-            img_warped.size()
+            img_warped.size(), INTER_LINEAR,
+            BORDER_REPLICATE, Scalar(100,100,100)
         );
 
         Mat mask = img_warped == 0;
         bitwise_and(mask, markers_vis, markers_vis);
         bitwise_or(img_warped, markers_vis, markers_vis);
+
+        markers_vis = img_warped;
 
         // draw_polygon(markers_vis, m.points);
     }
