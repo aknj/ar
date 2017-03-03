@@ -1,2 +1,0 @@
-Daniel Lélis Baggio, Mastering OpenCV with Practical Computer Vision Projects, ch. 2.
-https://github.com/MasteringOpenCV/code
