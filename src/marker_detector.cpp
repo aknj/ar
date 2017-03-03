@@ -22,7 +22,7 @@ void marker_detector(const Mat & frame, vector<marker_t> & markers) {
     threshold(_gray, _thres);
     find_contours(_thres, _contours, frame.cols / 5);
     find_possible_markers(_contours, _possible_markers, frame.clone());
-    find_valid_markers(_possible_markers, markers, _gray);
+    find_valid_markers(_possible_markers, markers, _gray, frame);
     if(markers.size() > 0) {
         refine_using_subpix(markers, _gray); }
 }
@@ -128,10 +128,11 @@ void find_possible_markers(const vector<vector<Point> > & contours,
 //- verify/recognize markers
 void find_valid_markers(vector<marker_t> & detected_markers,
                         vector<marker_t> & good_markers,
-                        const Mat & grayscale) {
+                        const Mat & grayscale,
+                        const Mat & frame) {
 
     Mat canonical_marker_image = Mat(MARKER_SIZE, grayscale.type());
-    Mat preview = grayscale.clone();
+    Mat preview = frame.clone();
 
     //- identify the markers
     for(size_t i=0; i < detected_markers.size(); i++) {
@@ -166,16 +167,22 @@ void find_valid_markers(vector<marker_t> & detected_markers,
 
             good_markers.push_back(marker);
 
-            draw_polygon(preview, marker.points);
+            Scalar color = Scalar(rand()%255, rand()%255, rand()%255);
+            draw_polygon(preview, marker.points, color, 2);
             char label[10];
-            sprintf(label, "id: %d", marker.id);
+            sprintf(label, "id=%d", marker.id);
             putText(preview, label, marker.points[0], 
-                    FONT_HERSHEY_SIMPLEX, .5, 
-                    Scalar(rand()%255, rand()%255, rand()%255)
+                    FONT_HERSHEY_SIMPLEX, 1, color, 2
             );
         }   
     }
     show_preview("markers preview", preview);
+    char key = (char)waitKey(30);
+    if(key == 's') {
+        char filename[10];
+        sprintf(filename, "%d.png", rand()%10);
+        imwrite(filename, preview);
+    }
 }
 
 //- refine marker corners using subpixel accuracy

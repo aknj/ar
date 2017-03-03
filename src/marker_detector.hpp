@@ -43,7 +43,8 @@ void find_contours(const Mat &, vector<vector<Point> > &, int);
 void find_possible_markers(const vector<vector<Point> > &, vector<marker_t> &,
                             Mat preview_image);
 
-void find_valid_markers(vector<marker_t> &, vector<marker_t> &, const Mat &);
+void find_valid_markers(vector<marker_t> &, vector<marker_t> &, const Mat &,
+                        const Mat &);
 
 void refine_using_subpix(vector<marker_t> &, const Mat &);
 

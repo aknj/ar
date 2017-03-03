@@ -24,12 +24,12 @@ float perimeter(vector<cv::Point2f> &a) {
 /******************************************************************************
  ** draws polygons with a random color of line ********************************
  */
-void draw_polygon(Mat mat_name, vector<Point2f> &poly, Scalar color)
+void draw_polygon(Mat mat_name, vector<Point2f> &poly, Scalar color, int thickness)
 {
     for(size_t i = 0; i < poly.size(); i++) {
         size_t i2 = (i+1) % poly.size();
 
-        line(mat_name, poly[i], poly[i2], color);
+        line(mat_name, poly[i], poly[i2], color, thickness);
     }
 }
 

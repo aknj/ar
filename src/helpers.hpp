@@ -15,7 +15,8 @@ using namespace std;
 float   perimeter(vector<cv::Point_<float>>&);
 
 void    draw_polygon(cv::Mat, vector<cv::Point_<float>>&,
-            cv::Scalar color = cv::Scalar(rand()%255, rand()%255, rand()%255));
+            cv::Scalar color = cv::Scalar(rand()%255, rand()%255, rand()%255),
+            int thickness = 1);
 
 void    show_preview(string name, const cv::Mat & mat);
 
