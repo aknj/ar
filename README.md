@@ -1,5 +1,3 @@
-### build and compile
-
 ```
 mkdir build
 cd build
