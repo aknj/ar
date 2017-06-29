@@ -1,3 +1,5 @@
+### building on Windows using CMake and GCC
+
 ```
 mkdir build
 cd build
