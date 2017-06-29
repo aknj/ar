@@ -1,6 +1,6 @@
 ### Building 
 
-Build by making a build directory (eg. `build/`), run `cmake` in that dir, and then use `make` to build the target.
+Build the application by making a build directory (eg. `build/`), run `cmake` in that dir, and then use `make` to build the target.
 
 #### Example
 
