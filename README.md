@@ -4,11 +4,11 @@ To build the application: make a build directory (eg. `build/`), run `cmake` in 
 
 #### Example
 
-###### on Windows using CMake and GCC
+###### on Windows using CMake and GCC (mingw-w64)
 
 ``` bash
-mkdir build && cd build
-cmake ../src -G "MinGW Makefiles"  # arguments are: location of CMakeLists.txt, build system generator
+mkdir build ; cd build
+cmake -G "MinGW Makefiles" ../src  # option to specify the appropriate generator, argument is the location of CMakeLists.txt 
 mingw32-make.exe                   # path to make executable
 ```
 
@@ -16,5 +16,5 @@ mingw32-make.exe                   # path to make executable
 
 ``` bash
 mkdir build && cd build
-cmake ../src                       # argument is location of CMakeLists.txt
+cmake ../src                       # argument is the location of CMakeLists.txt
 make
